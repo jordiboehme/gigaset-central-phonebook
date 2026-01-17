@@ -493,3 +493,23 @@ tbody tr:hover {
   background: #0066cc !important;
   color: white !important;
 }
+
+/* Footer */
+.footer {
+  margin-top: 24px;
+  padding: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #888;
+  border-top: 1px solid #e0e0e0;
+}
+
+.footer .version {
+  font-family: monospace;
+}
+
+.footer .copyright {
+  text-align: right;
+}
