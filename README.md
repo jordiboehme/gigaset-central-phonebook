@@ -26,23 +26,7 @@ A web-based phonebook management server that generates XML phonebook files for G
 
 - Node.js 18+ **or** Docker
 
-### Option 1: npm
-
-```bash
-npm install
-npm start
-```
-
-The server starts at http://localhost:3000
-
-### Option 2: Docker
-
-```bash
-docker build -t gigaset-phonebook .
-docker run -p 3000:3000 -v ./data:/app/data gigaset-phonebook
-```
-
-### Option 3: Docker Compose
+### Option 1: Docker Compose (Recommended)
 
 ```bash
 docker-compose up -d
@@ -53,6 +37,15 @@ To stop:
 ```bash
 docker-compose down
 ```
+
+### Option 2: npm
+
+```bash
+npm install
+npm start
+```
+
+The server starts at http://localhost:3000
 
 ## Configuration
 

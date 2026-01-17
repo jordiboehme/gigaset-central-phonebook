@@ -1,6 +1,6 @@
 services:
   phonebook:
-    build: .
+    image: ghcr.io/jordiboehme/gigaset-central-phonebook:main
     ports:
       - "3000:3000"
     volumes:
