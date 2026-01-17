@@ -1,0 +1,7 @@
+node_modules/
+data/
+spec/
+.env
+*.log
+.DS_Store
+CLAUDE.md

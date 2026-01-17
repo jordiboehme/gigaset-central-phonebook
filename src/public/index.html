@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gigaset Central Phonebook</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Gigaset Central Phonebook</h1>
+      <p class="subtitle">Manage contacts for your Gigaset DECT phone system</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search contacts...">
+      </div>
+      <div class="toolbar-actions">
+        <button id="addBtn" class="btn btn-primary">Add Contact</button>
+        <button id="importBtn" class="btn btn-secondary">Import</button>
+        <button id="exportBtn" class="btn btn-secondary">Export</button>
+        <button id="validateBtn" class="btn btn-secondary">Validate</button>
+        <button id="deleteSelectedBtn" class="btn btn-danger" disabled>Delete Selected</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <span id="entryCount">0 contacts</span>
+      <span id="selectedCount" class="hidden">| 0 selected</span>
+      <span id="validationSummary" class="hidden"></span>
+    </div>
+
+    <div class="table-container">
+      <table id="phonebookTable">
+        <thead>
+          <tr>
+            <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
+            <th class="col-name sortable" data-sort="surname">Name</th>
+            <th class="col-phone">Office</th>
+            <th class="col-phone">Mobile</th>
+            <th class="col-phone">Home</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="phonebookBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="phonebook-url">
+      <strong>Phonebook URL:</strong>
+      <code id="phonebookUrl"></code>
+      <button id="copyUrlBtn" class="btn btn-small">Copy</button>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="entryModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Contact</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+      <form id="entryForm">
+        <input type="hidden" id="entryId">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="surname">Last Name</label>
+            <input type="text" id="surname" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="name">First Name</label>
+            <input type="text" id="name" maxlength="32">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="office1">Office 1</label>
+            <input type="tel" id="office1" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="office2">Office 2</label>
+            <input type="tel" id="office2" maxlength="32">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mobile1">Mobile 1</label>
+            <input type="tel" id="mobile1" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="mobile2">Mobile 2</label>
+            <input type="tel" id="mobile2" maxlength="32">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="home1">Home 1</label>
+            <input type="tel" id="home1" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="home2">Home 2</label>
+            <input type="tel" id="home2" maxlength="32">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="importModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Import Contacts</h2>
+        <button class="close-btn" id="closeImportModal">&times;</button>
+      </div>
+      <div class="import-area" id="dropZone">
+        <p>Drag and drop a file here</p>
+        <p class="import-hint">Supports vCard (.vcf) and JSON (.json) files</p>
+        <input type="file" id="fileInput" accept=".vcf,.vcard,.json" hidden>
+        <button type="button" class="btn btn-primary" id="selectFileBtn">Select File</button>
+      </div>
+      <div id="jsonOptions" class="import-options hidden">
+        <p><strong>JSON Import Mode:</strong></p>
+        <label class="radio-label">
+          <input type="radio" name="importMode" value="merge" checked>
+          Merge with existing contacts
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="importMode" value="replace">
+          Replace entire phonebook
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelJsonImport">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmJsonImport">Import</button>
+        </div>
+      </div>
+      <div id="importStatus" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div id="confirmModal" class="modal hidden">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h2>Confirm Delete</h2>
+        <button class="close-btn" id="closeConfirmModal">&times;</button>
+      </div>
+      <p id="confirmMessage">Are you sure you want to delete this contact?</p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
