@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Gigaset Central Phonebook</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Prevent theme flash -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('gigaset-phonebook-theme') ||
+                (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Mobile toggle button -->
+        <button class="sidebar-toggle" aria-label="Toggle navigation">
+            <svg><use href="#icon-menu"></use></svg>
+        </button>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <svg><use href="#icon-logo"></use></svg>
+                    <span>Phonebook</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="sidebar-nav-item">
+                    <svg><use href="#icon-contacts"></use></svg>
+                    <span>Contacts</span>
+                </a>
+                <a href="/settings.html" class="sidebar-nav-item">
+                    <svg><use href="#icon-settings"></use></svg>
+                    <span>Settings</span>
+                </a>
+                <a href="/phonebook.xml" class="sidebar-nav-item" target="_blank">
+                    <svg><use href="#icon-api"></use></svg>
+                    <span>XML Endpoint</span>
+                </a>
+                <a href="/about.html" class="sidebar-nav-item active">
+                    <svg><use href="#icon-about"></use></svg>
+                    <span>About</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="theme-toggle" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle theme">
+                    <div class="theme-toggle-icons">
+                        <svg class="icon-sun"><use href="#icon-sun"></use></svg>
+                        <svg class="icon-moon"><use href="#icon-moon"></use></svg>
+                    </div>
+                    <div class="theme-toggle-track"></div>
+                    <span class="theme-toggle-label">Dark Mode</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile overlay -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">About</h1>
+                        <p class="page-subtitle">Gigaset Central Phonebook</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <!-- Hero Section -->
+                    <div class="about-hero">
+                        <svg class="about-logo"><use href="#icon-logo"></use></svg>
+                        <h2 class="about-title">Gigaset Central Phonebook</h2>
+                        <div class="about-version">Version 1.1.0</div>
+                        <p class="about-description">
+                            A web-based phonebook management server that generates XML phonebook files for Gigaset DECT phone systems.
+                            Features a responsive web UI for managing contacts and serves the phonebook XML directly to Gigaset devices.
+                        </p>
+                    </div>
+
+                    <!-- Features Section -->
+                    <div class="about-section">
+                        <div class="about-section-title">Features</div>
+                        <div class="property-grid">
+                            <div class="property-item">
+                                <div class="property-label">Web UI</div>
+                                <div class="property-value">Responsive, mobile-friendly interface for managing contacts</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">Phone Formatting</div>
+                                <div class="property-value">Automatic conversion of international numbers to local dial format</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">vCard Import</div>
+                                <div class="property-value">Import contacts from .vcf files (supports vCard 3.0/4.0)</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">JSON Import/Export</div>
+                                <div class="property-value">Backup and restore phonebook with merge or replace options</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">Validation</div>
+                                <div class="property-value">Detect entries without phone numbers and duplicate numbers</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">Docker Ready</div>
+                                <div class="property-value">Easy deployment with Docker and docker-compose</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compatible Devices Section -->
+                    <div class="about-section">
+                        <div class="about-section-title">Compatible Devices</div>
+                        <div class="property-grid">
+                            <div class="property-item">
+                                <div class="property-label">N870/N870E IP PRO</div>
+                                <div class="property-value">Up to 2000 entries</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">N770 IP PRO</div>
+                                <div class="property-value">Up to 2000 entries</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">N670 IP PRO</div>
+                                <div class="property-value">Up to 2000 entries</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">N610 IP PRO</div>
+                                <div class="property-value">Up to 2000 entries</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">N530 IP PRO</div>
+                                <div class="property-value">Up to 500 entries</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Links Section -->
+                    <div class="about-section">
+                        <div class="about-section-title">Resources</div>
+                        <div class="about-links">
+                            <a href="https://github.com/jordiboehme/gigaset-central-phonebook" class="about-link" target="_blank" rel="noopener">
+                                <svg><use href="#icon-github"></use></svg>
+                                GitHub Repository
+                            </a>
+                            <a href="/phonebook.xml" class="about-link" target="_blank">
+                                <svg><use href="#icon-api"></use></svg>
+                                XML Endpoint
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- License Section -->
+                    <div class="about-section">
+                        <div class="about-section-title">License</div>
+                        <div class="property-grid">
+                            <div class="property-item">
+                                <div class="property-label">License Type</div>
+                                <div class="property-value">MIT License</div>
+                            </div>
+                            <div class="property-item">
+                                <div class="property-label">Permissions</div>
+                                <div class="property-value">Free for personal and commercial use</div>
+                            </div>
+                        </div>
+                        <p class="text-secondary mt-4" style="font-size: var(--text-sm); line-height: 1.6;">
+                            Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+                            and associated documentation files, to deal in the Software without restriction, including
+                            without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+                            and/or sell copies of the Software.
+                        </p>
+                    </div>
+
+                    <!-- Copyright -->
+                    <div class="about-copyright">
+                        <p>&copy; 2026 Jordi Boehme. All rights reserved.</p>
+                        <p class="mt-2">
+                            Made with <svg style="width: 14px; height: 14px; vertical-align: middle; color: var(--error);"><use href="#icon-heart"></use></svg> for the Gigaset community.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Inline SVG Sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <!-- Logo - Phone with signal -->
+        <symbol id="icon-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </symbol>
+
+        <!-- Contacts - Users icon -->
+        <symbol id="icon-contacts" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </symbol>
+
+        <!-- Settings - Gear icon -->
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </symbol>
+
+        <!-- API/Document -->
+        <symbol id="icon-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+        </symbol>
+
+        <!-- About - Info icon -->
+        <symbol id="icon-about" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </symbol>
+
+        <!-- GitHub -->
+        <symbol id="icon-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+        </symbol>
+
+        <!-- Heart -->
+        <symbol id="icon-heart" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </symbol>
+
+        <!-- Menu (hamburger) -->
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </symbol>
+
+        <!-- Sun (light mode) -->
+        <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </symbol>
+
+        <!-- Moon (dark mode) -->
+        <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </symbol>
+    </svg>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>
