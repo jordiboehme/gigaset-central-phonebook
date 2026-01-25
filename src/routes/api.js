@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const storage = require('../services/storage');
 const vcard = require('../services/vcard');
+const phoneFormatter = require('../services/phoneFormatter');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -36,7 +37,8 @@ router.get('/entries', (req, res) => {
 // POST /api/entries - Create single entry
 router.post('/entries', (req, res) => {
   try {
-    const entry = storage.createEntry(req.body);
+    const formattedData = phoneFormatter.formatEntryIfEnabled(req.body);
+    const entry = storage.createEntry(formattedData);
     res.status(201).json(entry);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create entry' });
@@ -46,7 +48,8 @@ router.post('/entries', (req, res) => {
 // PUT /api/entries/:id - Update entry
 router.put('/entries/:id', (req, res) => {
   try {
-    const entry = storage.updateEntry(req.params.id, req.body);
+    const formattedData = phoneFormatter.formatEntryIfEnabled(req.body);
+    const entry = storage.updateEntry(req.params.id, formattedData);
     if (!entry) {
       return res.status(404).json({ error: 'Entry not found' });
     }
@@ -91,11 +94,14 @@ router.post('/import', upload.single('file'), (req, res) => {
     }
 
     const content = req.file.buffer.toString('utf8');
-    const contacts = vcard.parseVCard(content);
+    let contacts = vcard.parseVCard(content);
 
     if (contacts.length === 0) {
       return res.status(400).json({ error: 'No valid contacts found in file' });
     }
+
+    // Apply phone format conversion if enabled
+    contacts = contacts.map(c => phoneFormatter.formatEntryIfEnabled(c));
 
     const importedCount = storage.importEntries(contacts);
     res.json({ imported: importedCount });
@@ -135,18 +141,67 @@ router.post('/import-json', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'Invalid phonebook format: missing entries array' });
     }
 
+    // Apply phone format conversion if enabled
+    const entries = data.entries.map(e => phoneFormatter.formatEntryIfEnabled(e));
+
     const mode = req.query.mode || 'merge';
     let importedCount;
 
     if (mode === 'replace') {
-      importedCount = storage.replaceAllEntries(data.entries);
+      importedCount = storage.replaceAllEntries(entries);
     } else {
-      importedCount = storage.importEntries(data.entries);
+      importedCount = storage.importEntries(entries);
     }
 
     res.json({ imported: importedCount, replaced: mode === 'replace' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to import JSON file' });
+  }
+});
+
+// GET /api/entries/conversion-status - Get count of entries needing transformation
+router.get('/entries/conversion-status', (req, res) => {
+  try {
+    const settings = require('../services/settings');
+    const currentSettings = settings.getSettings();
+    const entries = storage.getAllEntries();
+    const unconvertedCount = phoneFormatter.countUnconvertedEntries(entries, currentSettings);
+    res.json({
+      unconvertedCount,
+      totalCount: entries.length,
+      isConfigured: settings.isConfigured()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get conversion status' });
+  }
+});
+
+// POST /api/entries/convert-all - Bulk convert existing entries
+router.post('/entries/convert-all', (req, res) => {
+  try {
+    const settings = require('../services/settings');
+    const currentSettings = settings.getSettings();
+    const entries = storage.getAllEntries();
+
+    const convertedEntries = phoneFormatter.convertAllEntries(entries, currentSettings);
+
+    // Update each entry with converted phone numbers
+    let convertedCount = 0;
+    convertedEntries.forEach((converted, index) => {
+      const original = entries[index];
+      // Check if any phone field changed
+      const changed = phoneFormatter.PHONE_FIELDS.some(
+        field => converted[field] !== original[field]
+      );
+      if (changed) {
+        storage.updateEntry(original.id, converted);
+        convertedCount++;
+      }
+    });
+
+    res.json({ convertedCount, totalCount: entries.length });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to convert entries' });
   }
 });
 

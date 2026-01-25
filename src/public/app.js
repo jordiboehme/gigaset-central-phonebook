@@ -55,6 +55,7 @@
     phonebookUrlEl.textContent = window.location.origin + '/phonebook.xml';
     await loadEntries();
     bindEvents();
+    checkConversionStatus();
   }
 
   function bindEvents() {
@@ -590,6 +591,91 @@
       clearTimeout(timeout);
       timeout = setTimeout(() => fn.apply(this, args), delay);
     };
+  }
+
+  // Check conversion status and show warning if needed
+  async function checkConversionStatus() {
+    try {
+      // Check for configuration and unconverted entries
+      const statusResponse = await fetch('/api/entries/conversion-status');
+      const status = await statusResponse.json();
+
+      // Show warning if country not configured
+      if (!status.isConfigured) {
+        showConfigurationWarning();
+        return;
+      }
+
+      // Check if any transformation is enabled
+      const settingsResponse = await fetch('/api/settings');
+      const settings = await settingsResponse.json();
+
+      const hasTransformations = settings.phoneFormatConversion ||
+                                 settings.removeSeparators ||
+                                 settings.removeSpaces;
+
+      if (!hasTransformations) {
+        return; // No transformations enabled
+      }
+
+      if (status.unconvertedCount > 0) {
+        showConversionWarning(status.unconvertedCount);
+      }
+    } catch (error) {
+      console.error('Failed to check conversion status:', error);
+    }
+  }
+
+  function showConfigurationWarning() {
+    let warningEl = document.getElementById('configWarning');
+    if (!warningEl) {
+      warningEl = document.createElement('div');
+      warningEl.id = 'configWarning';
+      warningEl.className = 'alert alert-info mb-4';
+      warningEl.innerHTML = `
+        <svg><use href="#icon-alert"></use></svg>
+        <div class="alert-content">
+          <div class="alert-message">
+            <strong>Configure your country</strong> in <a href="/settings.html">Settings</a> to enable phone number transformations.
+          </div>
+        </div>
+      `;
+
+      // Insert after stats grid
+      const statsGrid = document.querySelector('.stats-grid');
+      if (statsGrid && statsGrid.nextSibling) {
+        statsGrid.parentNode.insertBefore(warningEl, statsGrid.nextSibling);
+      }
+    }
+  }
+
+  function showConversionWarning(count) {
+    // Remove config warning if it exists
+    const configWarning = document.getElementById('configWarning');
+    if (configWarning) configWarning.remove();
+
+    // Create warning alert if it doesn't exist
+    let warningEl = document.getElementById('conversionWarning');
+    if (!warningEl) {
+      warningEl = document.createElement('div');
+      warningEl.id = 'conversionWarning';
+      warningEl.className = 'alert alert-warning mb-4';
+      warningEl.innerHTML = `
+        <svg><use href="#icon-alert"></use></svg>
+        <div class="alert-content">
+          <div class="alert-message">
+            <strong>${count} contact${count !== 1 ? 's' : ''}</strong> can be transformed.
+            <a href="/settings.html">Go to Settings</a> to apply transformations.
+          </div>
+        </div>
+      `;
+
+      // Insert after stats grid
+      const statsGrid = document.querySelector('.stats-grid');
+      if (statsGrid && statsGrid.nextSibling) {
+        statsGrid.parentNode.insertBefore(warningEl, statsGrid.nextSibling);
+      }
+    }
   }
 
   // Expose to global scope for onclick handlers

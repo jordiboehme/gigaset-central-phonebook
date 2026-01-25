@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const apiRoutes = require('./routes/api');
 const phonebookRoutes = require('./routes/phonebook');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api', apiRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/', phonebookRoutes);
 
 // Start server

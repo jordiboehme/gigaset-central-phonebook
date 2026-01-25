@@ -15,6 +15,7 @@ A web-based phonebook management server that generates XML phonebook files for G
 ## Features
 
 - **Web UI** - Responsive, mobile-friendly interface for managing contacts
+- **Phone Number Formatting** - Automatic conversion of international numbers (+49...) to local dial format (0...)
 - **vCard Import** - Import contacts from `.vcf` files (supports vCard 3.0/4.0)
 - **JSON Import/Export** - Backup and restore phonebook with merge or replace options
 - **Phonebook Validation** - Detect entries without phone numbers and duplicate numbers
@@ -69,6 +70,15 @@ Open http://localhost:3000 to manage contacts:
 - Import contacts from vCard or JSON files
 - Export phonebook as JSON backup
 - Validate phonebook for issues
+
+### Phone Number Formatting
+
+Some Gigaset devices may not support dialing numbers with the + prefix. The Settings page allows you to enable automatic phone number conversion:
+
+- **Local numbers**: `+4917612345678` → `017612345678` (country code replaced with 0)
+- **International numbers**: `+34609123456` → `0034609123456` (+ replaced with 00)
+
+Configure your local country code in Settings to ensure local numbers are converted correctly. Existing contacts can be bulk-converted using the "Apply to Existing Entries" button.
 
 ### Gigaset Device Configuration
 
