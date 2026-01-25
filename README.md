@@ -2,6 +2,8 @@
 
 A web-based phonebook management server that generates XML phonebook files for Gigaset DECT phone systems. Features a responsive web UI for managing contacts and serves the phonebook XML directly to Gigaset devices.
 
+![Gigaset Central Phonebook Screenshot](docs/images/screenshot.png)
+
 ## Compatible Devices
 
 - Gigaset N870/N870E IP PRO (up to 2000 entries)
