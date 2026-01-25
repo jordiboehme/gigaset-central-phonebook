@@ -1,170 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gigaset Central Phonebook</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gigaset Central Phonebook</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Prevent theme flash -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('gigaset-phonebook-theme') ||
+                (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Gigaset Central Phonebook</h1>
-      <p class="subtitle">Manage contacts for your Gigaset DECT phone system</p>
-    </header>
+    <div class="app-layout">
+        <!-- Mobile toggle button -->
+        <button class="sidebar-toggle" aria-label="Toggle navigation">
+            <svg><use href="#icon-menu"></use></svg>
+        </button>
 
-    <div class="toolbar">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search contacts...">
-      </div>
-      <div class="toolbar-actions">
-        <button id="addBtn" class="btn btn-primary">Add Contact</button>
-        <button id="importBtn" class="btn btn-secondary">Import</button>
-        <button id="exportBtn" class="btn btn-secondary">Export</button>
-        <button id="validateBtn" class="btn btn-secondary">Validate</button>
-        <button id="deleteSelectedBtn" class="btn btn-danger" disabled>Delete Selected</button>
-      </div>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <svg><use href="#icon-logo"></use></svg>
+                    <span>Phonebook</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="sidebar-nav-item active">
+                    <svg><use href="#icon-contacts"></use></svg>
+                    <span>Contacts</span>
+                </a>
+                <a href="/phonebook.xml" class="sidebar-nav-item" target="_blank">
+                    <svg><use href="#icon-api"></use></svg>
+                    <span>XML Endpoint</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="theme-toggle" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle theme">
+                    <div class="theme-toggle-icons">
+                        <svg class="icon-sun"><use href="#icon-sun"></use></svg>
+                        <svg class="icon-moon"><use href="#icon-moon"></use></svg>
+                    </div>
+                    <div class="theme-toggle-track"></div>
+                    <span class="theme-toggle-label">Dark Mode</span>
+                </div>
+                <div class="sidebar-version">v1.0.2</div>
+            </div>
+        </aside>
+
+        <!-- Mobile overlay -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Contacts</h1>
+                        <p class="page-subtitle">Manage your Gigaset central phonebook</p>
+                    </div>
+                    <div class="page-actions">
+                        <button id="addBtn" class="btn btn-primary">
+                            <svg><use href="#icon-plus"></use></svg>
+                            Add Contact
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Contacts</div>
+                        <div class="stat-value" id="entryCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Selected</div>
+                        <div class="stat-value" id="selectedCount">0</div>
+                    </div>
+                </div>
+
+                <!-- Toolbar Card -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="toolbar">
+                            <div class="search-box">
+                                <input type="text" id="searchInput" class="form-control" placeholder="Search contacts...">
+                            </div>
+                            <div class="toolbar-actions">
+                                <button id="importBtn" class="btn btn-secondary">
+                                    <svg><use href="#icon-upload"></use></svg>
+                                    Import
+                                </button>
+                                <button id="exportBtn" class="btn btn-secondary">
+                                    <svg><use href="#icon-download"></use></svg>
+                                    Export
+                                </button>
+                                <button id="validateBtn" class="btn btn-secondary">
+                                    <svg><use href="#icon-check"></use></svg>
+                                    Validate
+                                </button>
+                                <button id="deleteSelectedBtn" class="btn btn-danger" disabled>
+                                    <svg><use href="#icon-trash"></use></svg>
+                                    Delete Selected
+                                </button>
+                            </div>
+                        </div>
+                        <div id="validationSummary" class="alert alert-warning mt-4 hidden">
+                            <svg><use href="#icon-alert"></use></svg>
+                            <div class="alert-content">
+                                <div class="alert-message" id="validationMessage"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contacts Table -->
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table" id="phonebookTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
+                                    <th class="col-name sortable" data-sort="surname">Name</th>
+                                    <th class="col-phone">Office</th>
+                                    <th class="col-phone">Mobile</th>
+                                    <th class="col-phone">Home</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="phonebookBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phonebook URL -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="url-label">Phonebook URL</div>
+                        <div class="code-box">
+                            <code id="phonebookUrl"></code>
+                            <button class="btn-copy" id="copyUrlBtn" onclick="copyToClipboard(document.getElementById('phonebookUrl').textContent, this)">
+                                <svg><use href="#icon-copy"></use></svg>
+                            </button>
+                        </div>
+                        <div class="form-hint mt-2">Configure this URL in your Gigaset provisioning settings</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="page-footer">
+                    <span class="text-muted">Gigaset Central Phonebook v1.0.2</span>
+                    <span class="text-muted">&copy; 2026 Jordi Bohme</span>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div class="stats">
-      <span id="entryCount">0 contacts</span>
-      <span id="selectedCount" class="hidden">| 0 selected</span>
-      <span id="validationSummary" class="hidden"></span>
-    </div>
-
-    <div class="table-container">
-      <table id="phonebookTable">
-        <thead>
-          <tr>
-            <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
-            <th class="col-name sortable" data-sort="surname">Name</th>
-            <th class="col-phone">Office</th>
-            <th class="col-phone">Mobile</th>
-            <th class="col-phone">Home</th>
-            <th class="col-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="phonebookBody">
-        </tbody>
-      </table>
-    </div>
-
-    <div class="phonebook-url">
-      <strong>Phonebook URL:</strong>
-      <code id="phonebookUrl"></code>
-      <button id="copyUrlBtn" class="btn btn-small">Copy</button>
-    </div>
-
-    <footer class="footer">
-      <span class="version">v1.0.2</span>
-      <span class="copyright">&copy; 2026 Jordi Böhme</span>
-    </footer>
-  </div>
-
-  <!-- Add/Edit Modal -->
-  <div id="entryModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Add Contact</h2>
-        <button class="close-btn" id="closeModal">&times;</button>
-      </div>
-      <form id="entryForm">
-        <input type="hidden" id="entryId">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="surname">Last Name</label>
-            <input type="text" id="surname" maxlength="32">
-          </div>
-          <div class="form-group">
-            <label for="name">First Name</label>
-            <input type="text" id="name" maxlength="32">
-          </div>
+    <!-- Add/Edit Modal -->
+    <div id="entryModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Contact</h2>
+                <button class="btn btn-icon btn-ghost" id="closeModal" aria-label="Close">
+                    <svg><use href="#icon-x"></use></svg>
+                </button>
+            </div>
+            <form id="entryForm">
+                <div class="card-body">
+                    <input type="hidden" id="entryId">
+                    <div class="form-section">
+                        <div class="form-section-title">Name</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="surname">Last Name</label>
+                                <input type="text" class="form-control" id="surname" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="name">First Name</label>
+                                <input type="text" class="form-control" id="name" maxlength="32">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">Office</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="office1">Office 1</label>
+                                <input type="tel" class="form-control" id="office1" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="office2">Office 2</label>
+                                <input type="tel" class="form-control" id="office2" maxlength="32">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">Mobile</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="mobile1">Mobile 1</label>
+                                <input type="tel" class="form-control" id="mobile1" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="mobile2">Mobile 2</label>
+                                <input type="tel" class="form-control" id="mobile2" maxlength="32">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">Home</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="home1">Home 1</label>
+                                <input type="tel" class="form-control" id="home1" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="home2">Home 2</label>
+                                <input type="tel" class="form-control" id="home2" maxlength="32">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="office1">Office 1</label>
-            <input type="tel" id="office1" maxlength="32">
-          </div>
-          <div class="form-group">
-            <label for="office2">Office 2</label>
-            <input type="tel" id="office2" maxlength="32">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="mobile1">Mobile 1</label>
-            <input type="tel" id="mobile1" maxlength="32">
-          </div>
-          <div class="form-group">
-            <label for="mobile2">Mobile 2</label>
-            <input type="tel" id="mobile2" maxlength="32">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="home1">Home 1</label>
-            <input type="tel" id="home1" maxlength="32">
-          </div>
-          <div class="form-group">
-            <label for="home2">Home 2</label>
-            <input type="tel" id="home2" maxlength="32">
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save</button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <!-- Import Modal -->
-  <div id="importModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Import Contacts</h2>
-        <button class="close-btn" id="closeImportModal">&times;</button>
-      </div>
-      <div class="import-area" id="dropZone">
-        <p>Drag and drop a file here</p>
-        <p class="import-hint">Supports vCard (.vcf) and JSON (.json) files</p>
-        <input type="file" id="fileInput" accept=".vcf,.vcard,.json" hidden>
-        <button type="button" class="btn btn-primary" id="selectFileBtn">Select File</button>
-      </div>
-      <div id="jsonOptions" class="import-options hidden">
-        <p><strong>JSON Import Mode:</strong></p>
-        <label class="radio-label">
-          <input type="radio" name="importMode" value="merge" checked>
-          Merge with existing contacts
-        </label>
-        <label class="radio-label">
-          <input type="radio" name="importMode" value="replace">
-          Replace entire phonebook
-        </label>
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="cancelJsonImport">Cancel</button>
-          <button type="button" class="btn btn-primary" id="confirmJsonImport">Import</button>
+    <!-- Import Modal -->
+    <div id="importModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Contacts</h2>
+                <button class="btn btn-icon btn-ghost" id="closeImportModal" aria-label="Close">
+                    <svg><use href="#icon-x"></use></svg>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="import-area" id="dropZone">
+                    <svg class="import-icon"><use href="#icon-upload"></use></svg>
+                    <p>Drag and drop a file here</p>
+                    <p class="text-muted">Supports vCard (.vcf) and JSON (.json) files</p>
+                    <input type="file" id="fileInput" accept=".vcf,.vcard,.json" hidden>
+                    <button type="button" class="btn btn-primary mt-4" id="selectFileBtn">Select File</button>
+                </div>
+                <div id="jsonOptions" class="import-options hidden">
+                    <div class="form-section-title">Import Mode</div>
+                    <label class="radio-label">
+                        <input type="radio" name="importMode" value="merge" checked>
+                        <span>Merge with existing contacts</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="importMode" value="replace">
+                        <span>Replace entire phonebook</span>
+                    </label>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelJsonImport">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmJsonImport">Import</button>
+                    </div>
+                </div>
+                <div id="importStatus" class="alert hidden mt-4">
+                    <svg><use href="#icon-check"></use></svg>
+                    <div class="alert-content">
+                        <div class="alert-message" id="importMessage"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div id="importStatus" class="hidden"></div>
     </div>
-  </div>
 
-  <!-- Confirm Delete Modal -->
-  <div id="confirmModal" class="modal hidden">
-    <div class="modal-content modal-small">
-      <div class="modal-header">
-        <h2>Confirm Delete</h2>
-        <button class="close-btn" id="closeConfirmModal">&times;</button>
-      </div>
-      <p id="confirmMessage">Are you sure you want to delete this contact?</p>
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-      </div>
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="btn btn-icon btn-ghost" id="closeConfirmModal" aria-label="Close">
+                    <svg><use href="#icon-x"></use></svg>
+                </button>
+            </div>
+            <div class="card-body">
+                <p id="confirmMessage" class="text-secondary">Are you sure you want to delete this contact?</p>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script src="app.js"></script>
+    <!-- Inline SVG Sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <!-- Logo - Phone with signal -->
+        <symbol id="icon-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </symbol>
+
+        <!-- Contacts - Users icon -->
+        <symbol id="icon-contacts" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </symbol>
+
+        <!-- Plus -->
+        <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </symbol>
+
+        <!-- API/Document -->
+        <symbol id="icon-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+        </symbol>
+
+        <!-- Edit -->
+        <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </symbol>
+
+        <!-- Copy -->
+        <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </symbol>
+
+        <!-- Trash -->
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+        </symbol>
+
+        <!-- X/Close -->
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </symbol>
+
+        <!-- Check -->
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </symbol>
+
+        <!-- Menu (hamburger) -->
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </symbol>
+
+        <!-- Alert/Warning -->
+        <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </symbol>
+
+        <!-- Upload -->
+        <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </symbol>
+
+        <!-- Download -->
+        <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </symbol>
+
+        <!-- Sun (light mode) -->
+        <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </symbol>
+
+        <!-- Moon (dark mode) -->
+        <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </symbol>
+
+        <!-- Inbox (empty state) -->
+        <symbol id="icon-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+        </symbol>
+    </svg>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

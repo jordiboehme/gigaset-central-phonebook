@@ -22,8 +22,8 @@
   const entryCountEl = document.getElementById('entryCount');
   const selectedCountEl = document.getElementById('selectedCount');
   const validationSummaryEl = document.getElementById('validationSummary');
+  const validationMessageEl = document.getElementById('validationMessage');
   const phonebookUrlEl = document.getElementById('phonebookUrl');
-  const copyUrlBtn = document.getElementById('copyUrlBtn');
 
   // Entry Modal
   const entryModal = document.getElementById('entryModal');
@@ -65,7 +65,6 @@
     validateBtn.addEventListener('click', handleValidate);
     deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
     selectAllCheckbox.addEventListener('change', handleSelectAll);
-    copyUrlBtn.addEventListener('click', handleCopyUrl);
 
     // Entry modal
     closeModalBtn.addEventListener('click', closeEntryModal);
@@ -132,8 +131,9 @@
         <tr>
           <td colspan="6">
             <div class="empty-state">
-              <h3>No contacts yet</h3>
-              <p>Add your first contact or import a vCard file.</p>
+              <svg><use href="#icon-inbox"></use></svg>
+              <h2 class="empty-state-title">No contacts yet</h2>
+              <p class="empty-state-message">Add your first contact or import a vCard file.</p>
             </div>
           </td>
         </tr>
@@ -169,8 +169,12 @@
             ${entry.home2 ? '<div class="phone-secondary">' + escapeHtml(entry.home2) + '</div>' : ''}
           </td>
           <td class="col-actions">
-            <button class="action-btn edit" onclick="app.editEntry('${entry.id}')" title="Edit">&#9998;</button>
-            <button class="action-btn delete" onclick="app.deleteEntry('${entry.id}')" title="Delete">&#10005;</button>
+            <button class="btn btn-icon btn-ghost btn-sm" onclick="app.editEntry('${entry.id}')" title="Edit">
+              <svg><use href="#icon-edit"></use></svg>
+            </button>
+            <button class="btn btn-icon btn-ghost btn-sm" onclick="app.deleteEntry('${entry.id}')" title="Delete">
+              <svg><use href="#icon-trash"></use></svg>
+            </button>
           </td>
         </tr>
       `}).join('');
@@ -186,15 +190,9 @@
   }
 
   function updateStats() {
-    entryCountEl.textContent = `${entries.length} contact${entries.length !== 1 ? 's' : ''}`;
-    if (selectedIds.size > 0) {
-      selectedCountEl.textContent = `| ${selectedIds.size} selected`;
-      selectedCountEl.classList.remove('hidden');
-      deleteSelectedBtn.disabled = false;
-    } else {
-      selectedCountEl.classList.add('hidden');
-      deleteSelectedBtn.disabled = true;
-    }
+    entryCountEl.textContent = entries.length;
+    selectedCountEl.textContent = selectedIds.size;
+    deleteSelectedBtn.disabled = selectedIds.size === 0;
   }
 
   function updateSelectAll() {
@@ -392,22 +390,19 @@
 
       if (response.ok) {
         const action = result.replaced ? 'Replaced phonebook with' : 'Merged';
-        importStatus.textContent = `${action} ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
-        importStatus.className = 'success';
+        const message = `${action} ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
+        if (window.showToast) window.showToast(message);
         clearValidation();
         await loadEntries(searchInput.value.trim());
+        closeImportModal();
       } else {
-        importStatus.textContent = result.error || 'Import failed.';
-        importStatus.className = 'error';
+        if (window.showToast) window.showToast(result.error || 'Import failed.', 'error');
       }
-      importStatus.classList.remove('hidden');
       jsonOptions.classList.add('hidden');
       dropZone.classList.remove('hidden');
       pendingJsonFile = null;
     } catch (error) {
-      importStatus.textContent = 'Import failed: ' + error.message;
-      importStatus.className = 'error';
-      importStatus.classList.remove('hidden');
+      if (window.showToast) window.showToast('Import failed: ' + error.message, 'error');
     }
   }
 
@@ -461,19 +456,16 @@
       const result = await response.json();
 
       if (response.ok) {
-        importStatus.textContent = `Successfully imported ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
-        importStatus.className = 'success';
+        const message = `Successfully imported ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
+        if (window.showToast) window.showToast(message);
         clearValidation();
         await loadEntries(searchInput.value.trim());
+        closeImportModal();
       } else {
-        importStatus.textContent = result.error || 'Import failed.';
-        importStatus.className = 'error';
+        if (window.showToast) window.showToast(result.error || 'Import failed.', 'error');
       }
-      importStatus.classList.remove('hidden');
     } catch (error) {
-      importStatus.textContent = 'Import failed: ' + error.message;
-      importStatus.className = 'error';
-      importStatus.classList.remove('hidden');
+      if (window.showToast) window.showToast('Import failed: ' + error.message, 'error');
     }
   }
 
@@ -492,15 +484,6 @@
     }
   }
 
-  function handleCopyUrl() {
-    navigator.clipboard.writeText(phonebookUrlEl.textContent).then(() => {
-      const originalText = copyUrlBtn.textContent;
-      copyUrlBtn.textContent = 'Copied!';
-      setTimeout(() => {
-        copyUrlBtn.textContent = originalText;
-      }, 2000);
-    });
-  }
 
   // Validation
   function handleValidate() {
@@ -523,7 +506,9 @@
     validationActive = false;
     validationIssues = null;
     validateBtn.classList.remove('btn-active');
-    validationSummaryEl.classList.add('hidden');
+    if (validationSummaryEl) {
+      validationSummaryEl.classList.add('hidden');
+    }
     renderTable();
   }
 
@@ -568,25 +553,25 @@
   }
 
   function updateValidationSummary() {
-    if (!validationIssues) return;
+    if (!validationIssues || !validationSummaryEl || !validationMessageEl) return;
 
     const noPhoneCount = validationIssues.noPhone.length;
     const duplicateCount = Object.keys(validationIssues.duplicates).length;
     const totalIssues = noPhoneCount + duplicateCount;
 
     if (totalIssues === 0) {
-      validationSummaryEl.textContent = '| No issues found';
-      validationSummaryEl.className = 'validation-summary';
+      validationMessageEl.textContent = 'No issues found. All contacts are valid.';
+      validationSummaryEl.className = 'alert alert-success mt-4';
     } else {
       const parts = [];
       if (noPhoneCount > 0) {
-        parts.push(`${noPhoneCount} without phone`);
+        parts.push(`${noPhoneCount} contact${noPhoneCount !== 1 ? 's' : ''} without phone numbers`);
       }
       if (duplicateCount > 0) {
-        parts.push(`${duplicateCount} duplicate number${duplicateCount !== 1 ? 's' : ''}`);
+        parts.push(`${duplicateCount} duplicate phone number${duplicateCount !== 1 ? 's' : ''}`);
       }
-      validationSummaryEl.textContent = '| ' + parts.join(', ');
-      validationSummaryEl.className = 'validation-summary has-errors';
+      validationMessageEl.textContent = parts.join(', ');
+      validationSummaryEl.className = 'alert alert-warning mt-4';
     }
     validationSummaryEl.classList.remove('hidden');
   }
