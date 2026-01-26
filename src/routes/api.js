@@ -159,6 +159,139 @@ router.post('/import-json', upload.single('file'), (req, res) => {
   }
 });
 
+// Duplicate detection helper
+function findDuplicates(importedEntries, existingEntries) {
+  const existingMap = new Map();
+  existingEntries.forEach(e => {
+    const key = `${(e.surname || '').toLowerCase()}|${(e.name || '').toLowerCase()}`;
+    if (!existingMap.has(key)) existingMap.set(key, []);
+    existingMap.get(key).push(e);
+  });
+  const newEntries = [], duplicates = [];
+  importedEntries.forEach(imported => {
+    const key = `${(imported.surname || '').toLowerCase()}|${(imported.name || '').toLowerCase()}`;
+    const matches = existingMap.get(key);
+    if (matches && matches.length > 0) {
+      duplicates.push({ imported, existing: matches[0] });
+    } else {
+      newEntries.push(imported);
+    }
+  });
+  return { newEntries, duplicates };
+}
+
+// Parse uploaded file (vCard or JSON) into entries array
+function parseImportFile(file) {
+  const content = file.buffer.toString('utf8');
+  const filename = file.originalname.toLowerCase();
+
+  if (filename.endsWith('.json')) {
+    let data;
+    try {
+      data = JSON.parse(content);
+    } catch (e) {
+      return { error: 'Invalid JSON file' };
+    }
+    if (!data.entries || !Array.isArray(data.entries)) {
+      return { error: 'Invalid phonebook format: missing entries array' };
+    }
+    return { entries: data.entries };
+  }
+
+  // vCard
+  const contacts = vcard.parseVCard(content);
+  if (contacts.length === 0) {
+    return { error: 'No valid contacts found in file' };
+  }
+  return { entries: contacts };
+}
+
+// POST /api/import-preview - Preview import with duplicate detection
+router.post('/import-preview', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const parsed = parseImportFile(req.file);
+    if (parsed.error) {
+      return res.status(400).json({ error: parsed.error });
+    }
+
+    // Apply phone format conversion if enabled
+    const formattedEntries = parsed.entries.map(e => phoneFormatter.formatEntryIfEnabled(e));
+
+    const existingEntries = storage.getAllEntries();
+    const { newEntries, duplicates } = findDuplicates(formattedEntries, existingEntries);
+
+    res.json({
+      newEntries,
+      duplicates,
+      totalParsed: formattedEntries.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to preview import' });
+  }
+});
+
+// POST /api/import-confirm - Confirm import with duplicate strategy
+router.post('/import-confirm', (req, res) => {
+  try {
+    const { newEntries, duplicates, strategy } = req.body;
+
+    if (!Array.isArray(newEntries)) {
+      return res.status(400).json({ error: 'newEntries must be an array' });
+    }
+
+    let importedCount = 0;
+
+    // Always import new (non-duplicate) entries
+    if (newEntries.length > 0) {
+      importedCount += storage.importEntries(newEntries);
+    }
+
+    if (duplicates && duplicates.length > 0 && strategy !== 'ignore') {
+      const phonebook = storage.getAllEntries();
+
+      if (strategy === 'replace') {
+        // Overwrite existing entries with imported data
+        duplicates.forEach(({ imported, existing }) => {
+          storage.updateEntry(existing.id, {
+            surname: imported.surname || '',
+            name: imported.name || '',
+            office1: imported.office1 || '',
+            office2: imported.office2 || '',
+            mobile1: imported.mobile1 || '',
+            mobile2: imported.mobile2 || '',
+            home1: imported.home1 || '',
+            home2: imported.home2 || ''
+          });
+        });
+        importedCount += duplicates.length;
+      } else if (strategy === 'merge') {
+        // Fill empty phone fields from imported data
+        const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+        duplicates.forEach(({ imported, existing }) => {
+          const updates = {};
+          phoneFields.forEach(field => {
+            if (!existing[field] && imported[field]) {
+              updates[field] = imported[field];
+            }
+          });
+          if (Object.keys(updates).length > 0) {
+            storage.updateEntry(existing.id, updates);
+            importedCount++;
+          }
+        });
+      }
+    }
+
+    res.json({ imported: importedCount });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to confirm import' });
+  }
+});
+
 // GET /api/entries/conversion-status - Get count of entries needing transformation
 router.get('/entries/conversion-status', (req, res) => {
   try {

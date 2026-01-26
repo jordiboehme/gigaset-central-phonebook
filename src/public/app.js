@@ -8,13 +8,10 @@
   let deleteCallback = null;
   let validationActive = false;
   let validationIssues = null;
-  let pendingJsonFile = null;
 
   // DOM Elements
   const searchInput = document.getElementById('searchInput');
   const addBtn = document.getElementById('addBtn');
-  const importBtn = document.getElementById('importBtn');
-  const exportBtn = document.getElementById('exportBtn');
   const validateBtn = document.getElementById('validateBtn');
   const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
   const selectAllCheckbox = document.getElementById('selectAll');
@@ -31,17 +28,6 @@
   const entryForm = document.getElementById('entryForm');
   const closeModalBtn = document.getElementById('closeModal');
   const cancelBtn = document.getElementById('cancelBtn');
-
-  // Import Modal
-  const importModal = document.getElementById('importModal');
-  const closeImportModalBtn = document.getElementById('closeImportModal');
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const selectFileBtn = document.getElementById('selectFileBtn');
-  const importStatus = document.getElementById('importStatus');
-  const jsonOptions = document.getElementById('jsonOptions');
-  const cancelJsonImportBtn = document.getElementById('cancelJsonImport');
-  const confirmJsonImportBtn = document.getElementById('confirmJsonImport');
 
   // Confirm Modal
   const confirmModal = document.getElementById('confirmModal');
@@ -61,8 +47,6 @@
   function bindEvents() {
     searchInput.addEventListener('input', debounce(handleSearch, 300));
     addBtn.addEventListener('click', () => openEntryModal());
-    importBtn.addEventListener('click', () => openImportModal());
-    exportBtn.addEventListener('click', handleExport);
     validateBtn.addEventListener('click', handleValidate);
     deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
     selectAllCheckbox.addEventListener('change', handleSelectAll);
@@ -72,16 +56,6 @@
     cancelBtn.addEventListener('click', closeEntryModal);
     entryForm.addEventListener('submit', handleSaveEntry);
 
-    // Import modal
-    closeImportModalBtn.addEventListener('click', closeImportModal);
-    selectFileBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileSelect);
-    dropZone.addEventListener('dragover', handleDragOver);
-    dropZone.addEventListener('dragleave', handleDragLeave);
-    dropZone.addEventListener('drop', handleDrop);
-    cancelJsonImportBtn.addEventListener('click', cancelJsonImport);
-    confirmJsonImportBtn.addEventListener('click', confirmJsonImport);
-
     // Confirm modal
     closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
     confirmCancelBtn.addEventListener('click', closeConfirmModal);
@@ -90,9 +64,6 @@
     // Close modals on backdrop click
     entryModal.addEventListener('click', (e) => {
       if (e.target === entryModal) closeEntryModal();
-    });
-    importModal.addEventListener('click', (e) => {
-      if (e.target === importModal) closeImportModal();
     });
     confirmModal.addEventListener('click', (e) => {
       if (e.target === confirmModal) closeConfirmModal();
@@ -350,142 +321,6 @@
     closeConfirmModal();
   }
 
-  // Import Modal
-  function openImportModal() {
-    importModal.classList.remove('hidden');
-    importStatus.classList.add('hidden');
-    jsonOptions.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    pendingJsonFile = null;
-  }
-
-  function closeImportModal() {
-    importModal.classList.add('hidden');
-    importStatus.classList.add('hidden');
-    jsonOptions.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    fileInput.value = '';
-    pendingJsonFile = null;
-  }
-
-  function cancelJsonImport() {
-    jsonOptions.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    pendingJsonFile = null;
-    fileInput.value = '';
-  }
-
-  async function confirmJsonImport() {
-    if (!pendingJsonFile) return;
-
-    const mode = document.querySelector('input[name="importMode"]:checked').value;
-    const formData = new FormData();
-    formData.append('file', pendingJsonFile);
-
-    try {
-      const response = await fetch(`/api/import-json?mode=${mode}`, {
-        method: 'POST',
-        body: formData
-      });
-      const result = await response.json();
-
-      if (response.ok) {
-        const action = result.replaced ? 'Replaced phonebook with' : 'Merged';
-        const message = `${action} ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
-        if (window.showToast) window.showToast(message);
-        clearValidation();
-        await loadEntries(searchInput.value.trim());
-        closeImportModal();
-      } else {
-        if (window.showToast) window.showToast(result.error || 'Import failed.', 'error');
-      }
-      jsonOptions.classList.add('hidden');
-      dropZone.classList.remove('hidden');
-      pendingJsonFile = null;
-    } catch (error) {
-      if (window.showToast) window.showToast('Import failed: ' + error.message, 'error');
-    }
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  }
-
-  function handleDragLeave(e) {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      uploadFile(file);
-    }
-  }
-
-  function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-      uploadFile(file);
-    }
-  }
-
-  async function uploadFile(file) {
-    const isJson = file.name.toLowerCase().endsWith('.json');
-
-    if (isJson) {
-      // For JSON files, show merge/replace options
-      pendingJsonFile = file;
-      dropZone.classList.add('hidden');
-      jsonOptions.classList.remove('hidden');
-      importStatus.classList.add('hidden');
-      return;
-    }
-
-    // For vCard files, import directly (always merge)
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await fetch('/api/import', {
-        method: 'POST',
-        body: formData
-      });
-      const result = await response.json();
-
-      if (response.ok) {
-        const message = `Successfully imported ${result.imported} contact${result.imported !== 1 ? 's' : ''}.`;
-        if (window.showToast) window.showToast(message);
-        clearValidation();
-        await loadEntries(searchInput.value.trim());
-        closeImportModal();
-      } else {
-        if (window.showToast) window.showToast(result.error || 'Import failed.', 'error');
-      }
-    } catch (error) {
-      if (window.showToast) window.showToast('Import failed: ' + error.message, 'error');
-    }
-  }
-
-  async function handleExport() {
-    try {
-      const response = await fetch('/api/export');
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'phonebook.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export:', error);
-    }
-  }
-
-
   // Validation
   function handleValidate() {
     if (validationActive) {
@@ -682,6 +517,12 @@
   window.app = {
     editEntry,
     deleteEntry
+  };
+
+  // Expose for shared import-export module
+  window.refreshEntries = () => {
+    clearValidation();
+    loadEntries(searchInput.value.trim());
   };
 
   // Initialize on DOM ready

@@ -155,6 +155,9 @@
     const navItems = document.querySelectorAll('.sidebar-nav-item');
 
     navItems.forEach(item => {
+        // Skip action items (import/export) - they don't get active state
+        if (item.hasAttribute('data-action')) return;
+
         const href = item.getAttribute('href');
         if (href === currentPath || (href === '/' && currentPath === '/')) {
             item.classList.add('active');

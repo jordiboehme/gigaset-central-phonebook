@@ -18,6 +18,7 @@ A web-based phonebook management server that generates XML phonebook files for G
 - **Phone Number Formatting** - Automatic conversion of international numbers (+49...) to local dial format (0...)
 - **vCard Import** - Import contacts from `.vcf` files (supports vCard 3.0/4.0)
 - **JSON Import/Export** - Backup and restore phonebook with merge or replace options
+- **Duplicate Detection** - Automatic detection of duplicate contacts during import with options to ignore, replace, or merge
 - **Phonebook Validation** - Detect entries without phone numbers and duplicate numbers
 - **XML Endpoint** - Serves Gigaset-compatible XML at `/phonebook.xml`
 - **Authentication** - Optional HTTP Basic auth for the web UI
@@ -67,7 +68,10 @@ Set these in your environment or in `docker-compose.yml`.
 Open http://localhost:3000 to manage contacts:
 
 - Add, edit, and delete contacts
-- Import contacts from vCard or JSON files
+- Import contacts from vCard or JSON files with duplicate detection
+  - **Ignore**: Skip duplicate contacts, keep existing entries
+  - **Replace**: Overwrite existing entries with imported data
+  - **Merge**: Fill empty phone fields from imported data
 - Export phonebook as JSON backup
 - Validate phonebook for issues
 

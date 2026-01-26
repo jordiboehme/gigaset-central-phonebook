@@ -284,6 +284,12 @@ a:hover {
     opacity: 1;
 }
 
+.sidebar-divider {
+    height: 1px;
+    background: var(--divider);
+    margin: var(--space-2) var(--space-4);
+}
+
 .sidebar-footer {
     padding: var(--space-4);
     border-top: 1px solid var(--divider);
@@ -1622,6 +1628,42 @@ th.sortable:hover {
     margin-top: var(--space-4);
     padding: var(--space-4) 0 0;
     border-top: 1px solid var(--divider);
+}
+
+/* Duplicate detection UI */
+.import-duplicates {
+    padding: var(--space-4) 0;
+}
+
+.import-duplicates .card-footer {
+    padding: var(--space-4) 0 0;
+    border-top: 1px solid var(--divider);
+}
+
+.duplicate-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+}
+
+.duplicate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--divider);
+    font-size: var(--text-sm);
+}
+
+.duplicate-item:last-child {
+    border-bottom: none;
+}
+
+.duplicate-name {
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
 /* Radio labels */
