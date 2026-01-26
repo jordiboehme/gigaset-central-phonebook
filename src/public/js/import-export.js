@@ -387,24 +387,23 @@
             let details = '';
 
             if (ignoreCount > 0) {
-                details += `<div class="preview-details-item">• ${ignoreCount} duplicate${ignoreCount !== 1 ? 's' : ''} will be ignored</div>`;
+                details += `<div class="preview-item preview-warning"><svg><use href="#icon-x"></use></svg><span>${ignoreCount} duplicate${ignoreCount !== 1 ? 's' : ''} will be ignored</span></div>`;
             }
             if (replaceCount > 0) {
-                details += `<div class="preview-details-item">• ${replaceCount} contact${replaceCount !== 1 ? 's' : ''} will be replaced</div>`;
-                details += `<div class="preview-details-item text-warning">  ⚠️ Existing data will be overwritten</div>`;
+                details += `<div class="preview-item preview-warning"><svg><use href="#icon-alert"></use></svg><span>${replaceCount} duplicate${replaceCount !== 1 ? 's' : ''} will be replaced</span></div>`;
             }
             if (mergeCount > 0) {
-                details += `<div class="preview-details-item">• ${mergeCount} contact${mergeCount !== 1 ? 's' : ''} will be merged</div>`;
+                details += `<div class="preview-item preview-success"><svg><use href="#icon-check"></use></svg><span>${mergeCount} duplicate${mergeCount !== 1 ? 's' : ''} will be merged</span></div>`;
                 if (newFieldsCount > 0) {
-                    details += `<div class="preview-details-item">  ✓ ${newFieldsCount} empty field${newFieldsCount !== 1 ? 's' : ''} will be filled</div>`;
+                    details += `<div class="preview-details-item">✓ ${newFieldsCount} empty field${newFieldsCount !== 1 ? 's' : ''} will be filled</div>`;
                 }
                 if (conflictCount > 0) {
-                    details += `<div class="preview-details-item">  • ${conflictCount} contact${conflictCount !== 1 ? 's' : ''} ${conflictCount === 1 ? 'has' : 'have'} conflicts (kept)</div>`;
+                    details += `<div class="preview-details-item">⚠ ${conflictCount} contact${conflictCount !== 1 ? 's' : ''} ${conflictCount === 1 ? 'has' : 'have'} conflicts (existing data kept)</div>`;
                 }
             }
 
             if (details === '') {
-                details = '<div class="preview-details-item">• No changes will be made</div>';
+                details = '<div class="preview-item"><span>No changes will be made</span></div>';
             }
 
             previewDetails.innerHTML = details;
@@ -430,6 +429,9 @@
             const existingVal = existing[field.key] || '';
             const importedVal = imported[field.key] || '';
 
+            // Skip rows where neither side has a value
+            if (!existingVal && !importedVal) return null;
+
             let status = '';
             let statusClass = '';
 
@@ -442,9 +444,6 @@
             } else if (existingVal === importedVal && existingVal) {
                 status = '✓ Same';
                 statusClass = 'same';
-            } else if (!existingVal && !importedVal) {
-                status = '—';
-                statusClass = 'empty';
             } else {
                 status = '—';
                 statusClass = 'no-change';
@@ -458,7 +457,7 @@
                     <td class="comparison-status">${status}</td>
                 </tr>
             `;
-        }).join('');
+        }).filter(row => row !== null).join('');
 
         const matchBadge = matchType === 'phone'
             ? '<span class="badge badge-info">Phone Match</span>'
