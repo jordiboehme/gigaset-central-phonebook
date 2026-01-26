@@ -48,6 +48,10 @@
     const duplicateList = document.getElementById('duplicateList');
     const importConfirmBtn = document.getElementById('importConfirmBtn');
     const importCancelBtn = document.getElementById('importCancelBtn');
+    const importPreview = document.getElementById('importPreview');
+    const previewNewCount = document.getElementById('previewNewCount');
+    const previewDuplicateText = document.getElementById('previewDuplicateText');
+    const previewDetails = document.getElementById('previewDetails');
 
     // State for pending import
     let pendingImport = null;
@@ -129,6 +133,11 @@
         }
     });
 
+    // Listen for strategy changes to update preview
+    document.querySelectorAll('input[name="duplicateStrategy"]').forEach(radio => {
+        radio.addEventListener('change', updateImportPreview);
+    });
+
     async function handleImportFile(file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -145,44 +154,134 @@
                 return;
             }
 
-            if (result.duplicates.length === 0) {
-                // No duplicates - import directly
-                const confirmResponse = await fetch('/api/import-confirm', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        newEntries: result.newEntries,
-                        duplicates: [],
-                        strategy: 'ignore'
-                    })
-                });
-                const confirmResult = await confirmResponse.json();
+            // Validate imported data
+            const validation = validateImportData(result);
 
-                if (confirmResponse.ok) {
-                    const msg = `Imported ${confirmResult.imported} contact${confirmResult.imported !== 1 ? 's' : ''}.`;
-                    if (window.showToast) window.showToast(msg);
-                    if (window.refreshEntries) window.refreshEntries();
-                    closeImportModal();
+            if (result.duplicates.length === 0) {
+                // Show validation warnings if any, otherwise import directly
+                if (validation.warnings.length > 0) {
+                    pendingImport = result;
+                    showValidationWarnings(validation, result);
                 } else {
-                    if (window.showToast) window.showToast(confirmResult.error || 'Import failed.', 'error');
+                    // No duplicates and no warnings - import directly
+                    const confirmResponse = await fetch('/api/import-confirm', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            newEntries: result.newEntries,
+                            duplicates: [],
+                            strategy: 'ignore'
+                        })
+                    });
+                    const confirmResult = await confirmResponse.json();
+
+                    if (confirmResponse.ok) {
+                        const msg = `Imported ${confirmResult.imported} contact${confirmResult.imported !== 1 ? 's' : ''}.`;
+                        if (window.showToast) window.showToast(msg);
+                        if (window.refreshEntries) window.refreshEntries();
+                        closeImportModal();
+                    } else {
+                        if (window.showToast) window.showToast(confirmResult.error || 'Import failed.', 'error');
+                    }
                 }
             } else {
-                // Has duplicates - show duplicate section
+                // Has duplicates - show duplicate section (validation shown inline)
                 pendingImport = result;
-                showDuplicateSection(result);
+                showDuplicateSection(result, validation);
             }
         } catch (error) {
             if (window.showToast) window.showToast('Import failed: ' + error.message, 'error');
         }
     }
 
-    function showDuplicateSection(result) {
+    function validateImportData(result) {
+        const warnings = [];
+        const allEntries = [...result.newEntries, ...result.duplicates.map(d => d.imported)];
+        const MAX_NAME_LENGTH = 32;
+        const MAX_ENTRIES = 2000; // N530 has 500, but use conservative limit
+
+        // Check name length
+        allEntries.forEach((entry, index) => {
+            const surname = entry.surname || '';
+            const name = entry.name || '';
+            if (surname.length > MAX_NAME_LENGTH || name.length > MAX_NAME_LENGTH) {
+                const displayName = `${surname}${surname && name ? ', ' : ''}${name}`;
+                warnings.push({
+                    type: 'name_length',
+                    severity: 'warning',
+                    message: `Name exceeds 32 characters and will be truncated: "${displayName}"`
+                });
+            }
+        });
+
+        // Check for entries with no phone numbers
+        allEntries.forEach(entry => {
+            const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+            const hasPhone = phoneFields.some(field => entry[field]);
+            if (!hasPhone) {
+                const displayName = `${entry.surname || ''}${entry.surname && entry.name ? ', ' : ''}${entry.name || '(no name)'}`;
+                warnings.push({
+                    type: 'no_phone',
+                    severity: 'warning',
+                    message: `Contact has no phone numbers: "${displayName}"`
+                });
+            }
+        });
+
+        // Check total entry count (need to fetch current count)
+        // This is approximated - actual check would require API call
+        if (allEntries.length > MAX_ENTRIES) {
+            warnings.push({
+                type: 'entry_limit',
+                severity: 'error',
+                message: `Import contains ${allEntries.length} entries, exceeding the maximum of ${MAX_ENTRIES}`
+            });
+        }
+
+        return { warnings, isValid: !warnings.some(w => w.severity === 'error') };
+    }
+
+    function showValidationWarnings(validation, result) {
         if (dropZone) dropZone.classList.add('hidden');
         if (duplicateSection) duplicateSection.classList.remove('hidden');
 
         if (duplicateCount) {
-            duplicateCount.textContent = `${result.duplicates.length} contact${result.duplicates.length !== 1 ? 's' : ''} already exist.`;
+            duplicateCount.innerHTML = validation.warnings.map(w => {
+                const icon = w.severity === 'error' ? '❌' : '⚠️';
+                return `<div class="validation-${w.severity}">${icon} ${escapeHtml(w.message)}</div>`;
+            }).join('');
         }
+
+        if (newCount) {
+            newCount.textContent = `${result.newEntries.length} contact${result.newEntries.length !== 1 ? 's' : ''} will be imported.`;
+        }
+
+        if (duplicateList) {
+            duplicateList.innerHTML = '<div class="text-secondary">No duplicates found. Review warnings above.</div>';
+        }
+
+        updateImportPreview();
+    }
+
+    function showDuplicateSection(result, validation) {
+        if (dropZone) dropZone.classList.add('hidden');
+        if (duplicateSection) duplicateSection.classList.remove('hidden');
+
+        // Show validation warnings if any
+        let countText = '';
+        if (validation && validation.warnings.length > 0) {
+            countText = '<div class="mb-2">';
+            validation.warnings.forEach(w => {
+                const icon = w.severity === 'error' ? '❌' : '⚠️';
+                countText += `<div class="validation-${w.severity} mb-1">${icon} ${escapeHtml(w.message)}</div>`;
+            });
+            countText += '</div>';
+        }
+
+        if (duplicateCount) {
+            duplicateCount.innerHTML = countText + `${result.duplicates.length} contact${result.duplicates.length !== 1 ? 's' : ''} already exist.`;
+        }
+
         if (newCount) {
             newCount.textContent = `${result.newEntries.length} new contact${result.newEntries.length !== 1 ? 's' : ''} will be imported.`;
         }
@@ -190,12 +289,65 @@
         if (duplicateList) {
             duplicateList.innerHTML = result.duplicates.map(d => {
                 const name = `${escapeHtml(d.imported.surname)}${d.imported.surname && d.imported.name ? ', ' : ''}${escapeHtml(d.imported.name)}`;
-                return createDuplicateComparison(name, d.existing, d.imported);
+                return createDuplicateComparison(name, d.existing, d.imported, d.matchType);
             }).join('');
+        }
+
+        // Show preview summary
+        updateImportPreview();
+    }
+
+    function updateImportPreview() {
+        if (!pendingImport || !importPreview) return;
+
+        const strategy = document.querySelector('input[name="duplicateStrategy"]:checked')?.value || 'ignore';
+        const duplicatesCount = pendingImport.duplicates.length;
+        const newEntriesCount = pendingImport.newEntries.length;
+
+        // Count how many duplicates will actually be updated based on strategy
+        let affectedCount = 0;
+        if (strategy === 'replace') {
+            affectedCount = duplicatesCount;
+        } else if (strategy === 'merge') {
+            const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+            pendingImport.duplicates.forEach(({ imported, existing }) => {
+                const hasUpdates = phoneFields.some(field => !existing[field] && imported[field]);
+                if (hasUpdates) affectedCount++;
+            });
+        }
+
+        // Update preview text
+        if (previewNewCount) {
+            previewNewCount.textContent = `${newEntriesCount} new contact${newEntriesCount !== 1 ? 's' : ''} will be added`;
+        }
+
+        if (previewDuplicateText) {
+            previewDuplicateText.textContent = `${duplicatesCount} duplicate${duplicatesCount !== 1 ? 's' : ''} found`;
+        }
+
+        // Update details based on strategy
+        if (previewDetails) {
+            let details = '';
+            if (strategy === 'ignore') {
+                details = `<div class="preview-details-item">• Duplicates will be skipped</div>`;
+            } else if (strategy === 'replace') {
+                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be replaced</div>`;
+            } else if (strategy === 'merge') {
+                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will have missing phone numbers filled</div>`;
+                if (affectedCount === 0) {
+                    details += `<div class="preview-details-item">• All duplicates already have complete data</div>`;
+                }
+            }
+            previewDetails.innerHTML = details;
+        }
+
+        // Show the preview
+        if (importPreview) {
+            importPreview.classList.remove('hidden');
         }
     }
 
-    function createDuplicateComparison(name, existing, imported) {
+    function createDuplicateComparison(name, existing, imported, matchType = 'name') {
         const phoneFields = [
             { key: 'office1', label: 'Office 1' },
             { key: 'office2', label: 'Office 2' },
@@ -239,11 +391,15 @@
             `;
         }).join('');
 
+        const matchBadge = matchType === 'phone'
+            ? '<span class="badge badge-info">Phone Match</span>'
+            : '<span class="badge badge-warning">Name Match</span>';
+
         return `
             <div class="duplicate-comparison">
                 <div class="duplicate-comparison-header">
                     <span class="duplicate-name">${name}</span>
-                    <span class="badge badge-warning">Duplicate</span>
+                    ${matchBadge}
                 </div>
                 <table class="comparison-table">
                     <thead>

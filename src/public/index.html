@@ -283,6 +283,20 @@
                         <input type="radio" name="duplicateStrategy" value="merge">
                         <span><strong>Merge</strong> — Fill empty phone fields from imported data</span>
                     </label>
+                    <div id="importPreview" class="import-preview hidden">
+                        <div class="form-section-title mt-4">Import Summary</div>
+                        <div class="import-preview-content">
+                            <div class="preview-item preview-success">
+                                <svg><use href="#icon-check"></use></svg>
+                                <span id="previewNewCount">0 new contacts will be added</span>
+                            </div>
+                            <div class="preview-item preview-info" id="previewDuplicates">
+                                <svg><use href="#icon-alert"></use></svg>
+                                <span id="previewDuplicateText">0 duplicates found</span>
+                            </div>
+                            <div class="preview-details" id="previewDetails"></div>
+                        </div>
+                    </div>
                     <div class="card-footer mt-4">
                         <button type="button" class="btn btn-secondary" id="importCancelBtn">Cancel</button>
                         <button type="button" class="btn btn-primary" id="importConfirmBtn">Import</button>

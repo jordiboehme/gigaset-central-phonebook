@@ -161,22 +161,77 @@ router.post('/import-json', upload.single('file'), (req, res) => {
 
 // Duplicate detection helper
 function findDuplicates(importedEntries, existingEntries) {
-  const existingMap = new Map();
+  // Build maps for name-based and phone-based lookups
+  const nameMap = new Map();
+  const phoneMap = new Map();
+  const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+
   existingEntries.forEach(e => {
-    const key = `${(e.surname || '').toLowerCase()}|${(e.name || '').toLowerCase()}`;
-    if (!existingMap.has(key)) existingMap.set(key, []);
-    existingMap.get(key).push(e);
+    // Index by name
+    const nameKey = `${(e.surname || '').toLowerCase()}|${(e.name || '').toLowerCase()}`;
+    if (nameKey !== '|') {
+      if (!nameMap.has(nameKey)) nameMap.set(nameKey, []);
+      nameMap.get(nameKey).push(e);
+    }
+
+    // Index by phone numbers
+    phoneFields.forEach(field => {
+      const phone = (e[field] || '').trim();
+      if (phone) {
+        if (!phoneMap.has(phone)) phoneMap.set(phone, []);
+        phoneMap.get(phone).push(e);
+      }
+    });
   });
-  const newEntries = [], duplicates = [];
+
+  const newEntries = [];
+  const duplicates = [];
+  const processedIds = new Set();
+
   importedEntries.forEach(imported => {
-    const key = `${(imported.surname || '').toLowerCase()}|${(imported.name || '').toLowerCase()}`;
-    const matches = existingMap.get(key);
-    if (matches && matches.length > 0) {
-      duplicates.push({ imported, existing: matches[0] });
-    } else {
+    let matchFound = false;
+    let matchType = '';
+    let matchedEntry = null;
+
+    // Check for name match first
+    const nameKey = `${(imported.surname || '').toLowerCase()}|${(imported.name || '').toLowerCase()}`;
+    if (nameKey !== '|') {
+      const nameMatches = nameMap.get(nameKey);
+      if (nameMatches && nameMatches.length > 0) {
+        matchFound = true;
+        matchType = 'name';
+        matchedEntry = nameMatches[0];
+      }
+    }
+
+    // Check for phone number match if no name match
+    if (!matchFound) {
+      for (const field of phoneFields) {
+        const phone = (imported[field] || '').trim();
+        if (phone) {
+          const phoneMatches = phoneMap.get(phone);
+          if (phoneMatches && phoneMatches.length > 0) {
+            matchFound = true;
+            matchType = 'phone';
+            matchedEntry = phoneMatches[0];
+            break;
+          }
+        }
+      }
+    }
+
+    if (matchFound && matchedEntry && !processedIds.has(matchedEntry.id)) {
+      duplicates.push({
+        imported,
+        existing: matchedEntry,
+        matchType
+      });
+      processedIds.add(matchedEntry.id);
+    } else if (!matchFound) {
       newEntries.push(imported);
     }
   });
+
   return { newEntries, duplicates };
 }
 
