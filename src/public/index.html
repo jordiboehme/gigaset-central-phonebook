@@ -42,6 +42,16 @@
                     <svg><use href="#icon-contacts"></use></svg>
                     <span>Contacts</span>
                 </a>
+                <div class="sidebar-divider"></div>
+                <a href="#" class="sidebar-nav-item" data-action="import" id="sidebarImportBtn">
+                    <svg><use href="#icon-download"></use></svg>
+                    <span>Import</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" data-action="export" id="sidebarExportBtn">
+                    <svg><use href="#icon-upload"></use></svg>
+                    <span>Export</span>
+                </a>
+                <div class="sidebar-divider"></div>
                 <a href="/settings.html" class="sidebar-nav-item">
                     <svg><use href="#icon-settings"></use></svg>
                     <span>Settings</span>
@@ -64,7 +74,7 @@
                     <div class="theme-toggle-track"></div>
                     <span class="theme-toggle-label">Dark Mode</span>
                 </div>
-                <div class="sidebar-version">v1.1.0</div>
+                <div class="sidebar-version">v1.1.1</div>
             </div>
         </aside>
 
@@ -108,14 +118,6 @@
                                 <input type="text" id="searchInput" class="form-control" placeholder="Search contacts...">
                             </div>
                             <div class="toolbar-actions">
-                                <button id="importBtn" class="btn btn-secondary">
-                                    <svg><use href="#icon-upload"></use></svg>
-                                    Import
-                                </button>
-                                <button id="exportBtn" class="btn btn-secondary">
-                                    <svg><use href="#icon-download"></use></svg>
-                                    Export
-                                </button>
                                 <button id="validateBtn" class="btn btn-secondary">
                                     <svg><use href="#icon-check"></use></svg>
                                     Validate
@@ -263,25 +265,27 @@
                     <input type="file" id="fileInput" accept=".vcf,.vcard,.json" hidden>
                     <button type="button" class="btn btn-primary mt-4" id="selectFileBtn">Select File</button>
                 </div>
-                <div id="jsonOptions" class="import-options hidden">
-                    <div class="form-section-title">Import Mode</div>
+                <div id="duplicateSection" class="import-duplicates hidden">
+                    <div class="form-section-title">Duplicates Found</div>
+                    <p class="text-secondary mb-2" id="duplicateCount"></p>
+                    <p class="text-secondary mb-4" id="newCount"></p>
+                    <div class="duplicate-list" id="duplicateList"></div>
+                    <div class="form-section-title mt-4">How to handle duplicates?</div>
                     <label class="radio-label">
-                        <input type="radio" name="importMode" value="merge" checked>
-                        <span>Merge with existing contacts</span>
+                        <input type="radio" name="duplicateStrategy" value="ignore" checked>
+                        <span><strong>Ignore</strong> — Skip, keep existing contacts</span>
                     </label>
                     <label class="radio-label">
-                        <input type="radio" name="importMode" value="replace">
-                        <span>Replace entire phonebook</span>
+                        <input type="radio" name="duplicateStrategy" value="replace">
+                        <span><strong>Replace</strong> — Overwrite with imported data</span>
                     </label>
-                    <div class="card-footer">
-                        <button type="button" class="btn btn-secondary" id="cancelJsonImport">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="confirmJsonImport">Import</button>
-                    </div>
-                </div>
-                <div id="importStatus" class="alert hidden mt-4">
-                    <svg><use href="#icon-check"></use></svg>
-                    <div class="alert-content">
-                        <div class="alert-message" id="importMessage"></div>
+                    <label class="radio-label">
+                        <input type="radio" name="duplicateStrategy" value="merge">
+                        <span><strong>Merge</strong> — Fill empty phone fields from imported data</span>
+                    </label>
+                    <div class="card-footer mt-4">
+                        <button type="button" class="btn btn-secondary" id="importCancelBtn">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="importConfirmBtn">Import</button>
                     </div>
                 </div>
             </div>
@@ -437,5 +441,6 @@
     <!-- Scripts -->
     <script src="js/main.js"></script>
     <script src="app.js"></script>
+    <script src="js/import-export.js"></script>
 </body>
 </html>

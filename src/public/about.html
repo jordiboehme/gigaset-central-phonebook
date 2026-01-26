@@ -42,6 +42,16 @@
                     <svg><use href="#icon-contacts"></use></svg>
                     <span>Contacts</span>
                 </a>
+                <div class="sidebar-divider"></div>
+                <a href="#" class="sidebar-nav-item" data-action="import" id="sidebarImportBtn">
+                    <svg><use href="#icon-download"></use></svg>
+                    <span>Import</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" data-action="export" id="sidebarExportBtn">
+                    <svg><use href="#icon-upload"></use></svg>
+                    <span>Export</span>
+                </a>
+                <div class="sidebar-divider"></div>
                 <a href="/settings.html" class="sidebar-nav-item">
                     <svg><use href="#icon-settings"></use></svg>
                     <span>Settings</span>
@@ -86,7 +96,7 @@
                     <div class="about-hero">
                         <svg class="about-logo"><use href="#icon-logo"></use></svg>
                         <h2 class="about-title">Gigaset Central Phonebook</h2>
-                        <div class="about-version">Version 1.1.0</div>
+                        <div class="about-version">Version 1.1.1</div>
                         <p class="about-description">
                             A web-based phonebook management server that generates XML phonebook files for Gigaset DECT phone systems.
                             Features a responsive web UI for managing contacts and serves the phonebook XML directly to Gigaset devices.
@@ -270,9 +280,86 @@
         <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </symbol>
+
+        <!-- Upload -->
+        <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </symbol>
+
+        <!-- Download -->
+        <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </symbol>
+
+        <!-- X/Close -->
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </symbol>
+
+        <!-- Check -->
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </symbol>
+
+        <!-- Alert/Warning -->
+        <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </symbol>
     </svg>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Contacts</h2>
+                <button class="btn btn-icon btn-ghost" id="closeImportModal" aria-label="Close">
+                    <svg><use href="#icon-x"></use></svg>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="import-area" id="dropZone">
+                    <svg class="import-icon"><use href="#icon-upload"></use></svg>
+                    <p>Drag and drop a file here</p>
+                    <p class="text-muted">Supports vCard (.vcf) and JSON (.json) files</p>
+                    <input type="file" id="fileInput" accept=".vcf,.vcard,.json" hidden>
+                    <button type="button" class="btn btn-primary mt-4" id="selectFileBtn">Select File</button>
+                </div>
+                <div id="duplicateSection" class="import-duplicates hidden">
+                    <div class="form-section-title">Duplicates Found</div>
+                    <p class="text-secondary mb-2" id="duplicateCount"></p>
+                    <p class="text-secondary mb-4" id="newCount"></p>
+                    <div class="duplicate-list" id="duplicateList"></div>
+                    <div class="form-section-title mt-4">How to handle duplicates?</div>
+                    <label class="radio-label">
+                        <input type="radio" name="duplicateStrategy" value="ignore" checked>
+                        <span><strong>Ignore</strong> — Skip, keep existing contacts</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="duplicateStrategy" value="replace">
+                        <span><strong>Replace</strong> — Overwrite with imported data</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="duplicateStrategy" value="merge">
+                        <span><strong>Merge</strong> — Fill empty phone fields from imported data</span>
+                    </label>
+                    <div class="card-footer mt-4">
+                        <button type="button" class="btn btn-secondary" id="importCancelBtn">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="importConfirmBtn">Import</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="js/main.js"></script>
+    <script src="js/import-export.js"></script>
 </body>
 </html>
