@@ -118,6 +118,10 @@
                                 <input type="text" id="searchInput" class="form-control" placeholder="Search contacts...">
                             </div>
                             <div class="toolbar-actions">
+                                <button id="findDuplicatesBtn" class="btn btn-secondary">
+                                    <svg><use href="#icon-alert"></use></svg>
+                                    Find Duplicates
+                                </button>
                                 <button id="validateBtn" class="btn btn-secondary">
                                     <svg><use href="#icon-check"></use></svg>
                                     Validate
@@ -313,6 +317,40 @@
             <div class="card-footer">
                 <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Find Duplicates Modal -->
+    <div id="duplicatesModal" class="modal hidden">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Find Duplicates</h2>
+                <button class="btn btn-icon btn-ghost" id="closeDuplicatesModal" aria-label="Close">
+                    <svg><use href="#icon-x"></use></svg>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="duplicatesScanning" class="text-center hidden">
+                    <div class="spinner"></div>
+                    <p class="text-secondary mt-3">Scanning phonebook for duplicates...</p>
+                </div>
+                <div id="duplicatesResults" class="hidden">
+                    <div class="alert alert-info mb-4">
+                        <svg><use href="#icon-alert"></use></svg>
+                        <div class="alert-content">
+                            <div class="alert-message" id="duplicatesSummary"></div>
+                        </div>
+                    </div>
+                    <div id="duplicatesListContainer"></div>
+                </div>
+                <div id="duplicatesEmpty" class="text-center hidden">
+                    <svg style="width: 48px; height: 48px; color: var(--success); margin-bottom: var(--space-3);"><use href="#icon-check"></use></svg>
+                    <p class="text-secondary">No duplicates found! Your phonebook is clean.</p>
+                </div>
+            </div>
+            <div class="card-footer" id="duplicatesFooter">
+                <button type="button" class="btn btn-secondary" id="closeDuplicatesBtn">Close</button>
             </div>
         </div>
     </div>

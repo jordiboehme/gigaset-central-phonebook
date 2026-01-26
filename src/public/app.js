@@ -13,6 +13,7 @@
   const searchInput = document.getElementById('searchInput');
   const addBtn = document.getElementById('addBtn');
   const validateBtn = document.getElementById('validateBtn');
+  const findDuplicatesBtn = document.getElementById('findDuplicatesBtn');
   const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
   const selectAllCheckbox = document.getElementById('selectAll');
   const phonebookBody = document.getElementById('phonebookBody');
@@ -35,6 +36,16 @@
   const confirmMessage = document.getElementById('confirmMessage');
   const confirmCancelBtn = document.getElementById('confirmCancelBtn');
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+  // Duplicates Modal
+  const duplicatesModal = document.getElementById('duplicatesModal');
+  const closeDuplicatesModalBtn = document.getElementById('closeDuplicatesModal');
+  const closeDuplicatesBtn = document.getElementById('closeDuplicatesBtn');
+  const duplicatesScanning = document.getElementById('duplicatesScanning');
+  const duplicatesResults = document.getElementById('duplicatesResults');
+  const duplicatesEmpty = document.getElementById('duplicatesEmpty');
+  const duplicatesSummary = document.getElementById('duplicatesSummary');
+  const duplicatesListContainer = document.getElementById('duplicatesListContainer');
 
   // Initialize
   async function init() {
@@ -61,6 +72,11 @@
     confirmCancelBtn.addEventListener('click', closeConfirmModal);
     confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
 
+    // Duplicates modal
+    if (findDuplicatesBtn) findDuplicatesBtn.addEventListener('click', handleFindDuplicates);
+    if (closeDuplicatesModalBtn) closeDuplicatesModalBtn.addEventListener('click', closeDuplicatesModal);
+    if (closeDuplicatesBtn) closeDuplicatesBtn.addEventListener('click', closeDuplicatesModal);
+
     // Close modals on backdrop click
     entryModal.addEventListener('click', (e) => {
       if (e.target === entryModal) closeEntryModal();
@@ -68,6 +84,11 @@
     confirmModal.addEventListener('click', (e) => {
       if (e.target === confirmModal) closeConfirmModal();
     });
+    if (duplicatesModal) {
+      duplicatesModal.addEventListener('click', (e) => {
+        if (e.target === duplicatesModal) closeDuplicatesModal();
+      });
+    }
 
     // Sortable headers
     document.querySelectorAll('th.sortable').forEach(th => {
@@ -320,6 +341,101 @@
     }
     closeConfirmModal();
   }
+
+  // Find Duplicates
+  async function handleFindDuplicates() {
+    // Open modal
+    duplicatesModal.classList.remove('hidden');
+
+    // Show scanning state
+    duplicatesScanning.classList.remove('hidden');
+    duplicatesResults.classList.add('hidden');
+    duplicatesEmpty.classList.add('hidden');
+
+    try {
+      const response = await fetch('/api/entries/find-duplicates');
+      const data = await response.json();
+
+      // Hide scanning
+      duplicatesScanning.classList.add('hidden');
+
+      if (data.duplicates.length === 0) {
+        // No duplicates found
+        duplicatesEmpty.classList.remove('hidden');
+      } else {
+        // Show results
+        displayDuplicates(data.duplicates, data.totalChecked);
+        duplicatesResults.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Failed to find duplicates:', error);
+      duplicatesScanning.classList.add('hidden');
+      if (window.showToast) {
+        window.showToast('Failed to scan for duplicates', 'error');
+      }
+      closeDuplicatesModal();
+    }
+  }
+
+  function displayDuplicates(duplicates, totalChecked) {
+    // Update summary
+    const totalDuplicateEntries = duplicates.reduce((sum, group) => sum + group.entries.length, 0);
+    duplicatesSummary.textContent = `Found ${duplicates.length} duplicate group${duplicates.length !== 1 ? 's' : ''} with ${totalDuplicateEntries} total contacts (scanned ${totalChecked} entries)`;
+
+    // Build duplicate groups HTML
+    duplicatesListContainer.innerHTML = duplicates.map(group => {
+      const typeLabel = group.type === 'phone' ? 'Same Phone Number' : 'Same Name';
+      const typeClass = group.type === 'phone' ? 'badge-info' : 'badge-warning';
+
+      const entriesHtml = group.entries.map(entry => {
+        const name = `${entry.surname || ''}${entry.surname && entry.name ? ', ' : ''}${entry.name || '(no name)'}`;
+        const phones = [entry.office1, entry.office2, entry.mobile1, entry.mobile2, entry.home1, entry.home2]
+          .filter(p => p)
+          .map(p => `<span class="duplicate-entry-phone">${escapeHtml(p)}</span>`)
+          .join('');
+
+        return `
+          <div class="duplicate-entry-item">
+            <div class="duplicate-entry-name">${escapeHtml(name)}</div>
+            <div class="duplicate-entry-phones">${phones || '<span class="text-muted">No phone numbers</span>'}</div>
+            <div class="duplicate-entry-actions">
+              <button class="btn btn-sm btn-secondary" onclick="editEntry('${entry.id}')">Edit</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="duplicate-group">
+          <div class="duplicate-group-header">
+            <div>
+              <div class="duplicate-group-title">
+                <span class="badge ${typeClass}">${typeLabel}</span>
+                ${group.type === 'name' ? escapeHtml(group.key.replace('|', ', ')) : escapeHtml(group.key)}
+              </div>
+              <div class="duplicate-group-subtitle">${group.entries.length} contact${group.entries.length !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+          <div class="duplicate-group-entries">
+            ${entriesHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function closeDuplicatesModal() {
+    duplicatesModal.classList.add('hidden');
+  }
+
+  // Make editEntry available globally for onclick
+  window.editEntry = function(id) {
+    const entry = entries.find(e => e.id === id);
+    if (entry) {
+      openEntryModal(entry);
+      closeDuplicatesModal();
+    }
+  };
 
   // Validation
   function handleValidate() {
