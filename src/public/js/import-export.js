@@ -306,13 +306,32 @@
 
         // Count how many duplicates will actually be updated based on strategy
         let affectedCount = 0;
+        let conflictCount = 0;
+        let newFieldsCount = 0;
+
+        const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+
         if (strategy === 'replace') {
             affectedCount = duplicatesCount;
         } else if (strategy === 'merge') {
-            const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
             pendingImport.duplicates.forEach(({ imported, existing }) => {
-                const hasUpdates = phoneFields.some(field => !existing[field] && imported[field]);
+                let hasUpdates = false;
+                let hasConflicts = false;
+
+                phoneFields.forEach(field => {
+                    const existingVal = existing[field] || '';
+                    const importedVal = imported[field] || '';
+
+                    if (!existingVal && importedVal) {
+                        hasUpdates = true;
+                        newFieldsCount++;
+                    } else if (existingVal && importedVal && existingVal !== importedVal) {
+                        hasConflicts = true;
+                    }
+                });
+
                 if (hasUpdates) affectedCount++;
+                if (hasConflicts) conflictCount++;
             });
         }
 
@@ -329,12 +348,19 @@
         if (previewDetails) {
             let details = '';
             if (strategy === 'ignore') {
-                details = `<div class="preview-details-item">• Duplicates will be skipped</div>`;
+                details = `<div class="preview-details-item">• ${duplicatesCount} duplicate${duplicatesCount !== 1 ? 's' : ''} will be skipped</div>`;
             } else if (strategy === 'replace') {
-                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be replaced</div>`;
+                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be completely replaced</div>`;
+                details += `<div class="preview-details-item text-warning">⚠️ All existing data will be overwritten</div>`;
             } else if (strategy === 'merge') {
-                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will have missing phone numbers filled</div>`;
-                if (affectedCount === 0) {
+                if (affectedCount > 0) {
+                    details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be updated</div>`;
+                    details += `<div class="preview-details-item">• ${newFieldsCount} empty field${newFieldsCount !== 1 ? 's' : ''} will be filled</div>`;
+                }
+                if (conflictCount > 0) {
+                    details += `<div class="preview-details-item">• ${conflictCount} contact${conflictCount !== 1 ? 's' : ''} ${conflictCount === 1 ? 'has' : 'have'} conflicts (existing data kept)</div>`;
+                }
+                if (affectedCount === 0 && conflictCount === 0) {
                     details += `<div class="preview-details-item">• All duplicates already have complete data</div>`;
                 }
             }

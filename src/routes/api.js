@@ -393,4 +393,76 @@ router.post('/entries/convert-all', (req, res) => {
   }
 });
 
+// GET /api/entries/find-duplicates - Find duplicates in existing phonebook
+router.get('/entries/find-duplicates', (req, res) => {
+  try {
+    const entries = storage.getAllEntries();
+    const duplicates = [];
+    const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
+
+    // Build maps for detection
+    const nameMap = new Map();
+    const phoneMap = new Map();
+
+    entries.forEach(entry => {
+      // Index by name
+      const nameKey = `${(entry.surname || '').toLowerCase()}|${(entry.name || '').toLowerCase()}`;
+      if (nameKey !== '|') {
+        if (!nameMap.has(nameKey)) nameMap.set(nameKey, []);
+        nameMap.get(nameKey).push(entry);
+      }
+
+      // Index by phone numbers
+      phoneFields.forEach(field => {
+        const phone = (entry[field] || '').trim();
+        if (phone) {
+          if (!phoneMap.has(phone)) phoneMap.set(phone, []);
+          phoneMap.get(phone).push(entry);
+        }
+      });
+    });
+
+    // Find name duplicates
+    nameMap.forEach((entries, nameKey) => {
+      if (entries.length > 1) {
+        duplicates.push({
+          type: 'name',
+          key: nameKey,
+          entries: entries
+        });
+      }
+    });
+
+    // Find phone duplicates
+    phoneMap.forEach((entries, phone) => {
+      if (entries.length > 1) {
+        // Check if not already in name duplicates
+        const entryIds = entries.map(e => e.id).sort().join(',');
+        const alreadyFound = duplicates.some(d => {
+          if (d.type === 'name') {
+            const dupIds = d.entries.map(e => e.id).sort().join(',');
+            return dupIds === entryIds;
+          }
+          return false;
+        });
+
+        if (!alreadyFound) {
+          duplicates.push({
+            type: 'phone',
+            key: phone,
+            entries: entries
+          });
+        }
+      }
+    });
+
+    res.json({
+      duplicates,
+      totalChecked: entries.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to find duplicates' });
+  }
+});
+
 module.exports = router;

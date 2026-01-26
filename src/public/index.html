@@ -273,15 +273,15 @@
                     <div class="form-section-title mt-4">How to handle duplicates?</div>
                     <label class="radio-label">
                         <input type="radio" name="duplicateStrategy" value="ignore" checked>
-                        <span><strong>Ignore</strong> — Skip, keep existing contacts</span>
+                        <div><strong>Ignore</strong><br><span class="strategy-description">Skip duplicates, keep all existing data unchanged</span></div>
                     </label>
                     <label class="radio-label">
                         <input type="radio" name="duplicateStrategy" value="replace">
-                        <span><strong>Replace</strong> — Overwrite with imported data</span>
+                        <div><strong>Replace</strong><br><span class="strategy-description">Overwrite existing contacts with all imported data (⚠️ existing data lost)</span></div>
                     </label>
                     <label class="radio-label">
                         <input type="radio" name="duplicateStrategy" value="merge">
-                        <span><strong>Merge</strong> — Fill empty phone fields from imported data</span>
+                        <div><strong>Merge (Smart)</strong><br><span class="strategy-description">Add missing phone numbers only. Conflicts keep existing data.</span></div>
                     </label>
                     <div id="importPreview" class="import-preview hidden">
                         <div class="form-section-title mt-4">Import Summary</div>
