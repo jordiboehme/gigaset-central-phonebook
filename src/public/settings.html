@@ -418,19 +418,11 @@
                     <p class="text-secondary mb-2" id="duplicateCount"></p>
                     <p class="text-secondary mb-4" id="newCount"></p>
                     <div class="duplicate-list" id="duplicateList"></div>
-                    <div class="form-section-title mt-4">How to handle duplicates?</div>
-                    <label class="radio-label">
-                        <input type="radio" name="duplicateStrategy" value="ignore" checked>
-                        <div><strong>Ignore</strong><br><span class="strategy-description">Skip duplicates, keep all existing data unchanged</span></div>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="duplicateStrategy" value="replace">
-                        <div><strong>Replace</strong><br><span class="strategy-description">Overwrite existing contacts with all imported data (⚠️ existing data lost)</span></div>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="duplicateStrategy" value="merge">
-                        <div><strong>Merge (Smart)</strong><br><span class="strategy-description">Add missing phone numbers only. Conflicts keep existing data.</span></div>
-                    </label>
+                    <div class="form-section-title mt-4">
+                        Quick Actions
+                        <button type="button" class="btn btn-sm btn-secondary" id="setAllStrategy" style="float: right;">Set All to Merge</button>
+                    </div>
+                    <p class="text-secondary text-sm mb-4">Choose an action for each duplicate contact below, or use "Set All" to apply the same action to all duplicates.</p>
                     <div id="importPreview" class="import-preview hidden">
                         <div class="form-section-title mt-4">Import Summary</div>
                         <div class="import-preview-content">

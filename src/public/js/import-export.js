@@ -133,10 +133,35 @@
         }
     });
 
-    // Listen for strategy changes to update preview
-    document.querySelectorAll('input[name="duplicateStrategy"]').forEach(radio => {
-        radio.addEventListener('change', updateImportPreview);
-    });
+    // "Set All" button functionality
+    const setAllBtn = document.getElementById('setAllStrategy');
+    let currentSetAllStrategy = 'merge';
+
+    if (setAllBtn) {
+        setAllBtn.addEventListener('click', function() {
+            // Cycle through strategies: merge -> ignore -> replace -> merge
+            if (currentSetAllStrategy === 'merge') {
+                currentSetAllStrategy = 'ignore';
+                setAllBtn.textContent = 'Set All to Ignore';
+            } else if (currentSetAllStrategy === 'ignore') {
+                currentSetAllStrategy = 'replace';
+                setAllBtn.textContent = 'Set All to Replace';
+            } else {
+                currentSetAllStrategy = 'merge';
+                setAllBtn.textContent = 'Set All to Merge';
+            }
+
+            // Apply to all per-duplicate strategy selectors
+            document.querySelectorAll('.per-duplicate-strategy').forEach(radio => {
+                if (radio.value === currentSetAllStrategy) {
+                    radio.checked = true;
+                }
+            });
+
+            // Update preview
+            updateImportPreview();
+        });
+    }
 
     async function handleImportFile(file) {
         const formData = new FormData();
@@ -287,10 +312,15 @@
         }
 
         if (duplicateList) {
-            duplicateList.innerHTML = result.duplicates.map(d => {
+            duplicateList.innerHTML = result.duplicates.map((d, index) => {
                 const name = `${escapeHtml(d.imported.surname)}${d.imported.surname && d.imported.name ? ', ' : ''}${escapeHtml(d.imported.name)}`;
-                return createDuplicateComparison(name, d.existing, d.imported, d.matchType);
+                return createDuplicateComparison(name, d.existing, d.imported, d.matchType, index);
             }).join('');
+
+            // Add event listeners to per-duplicate strategy radios
+            document.querySelectorAll('.per-duplicate-strategy').forEach(radio => {
+                radio.addEventListener('change', updateImportPreview);
+            });
         }
 
         // Show preview summary
@@ -300,21 +330,30 @@
     function updateImportPreview() {
         if (!pendingImport || !importPreview) return;
 
-        const strategy = document.querySelector('input[name="duplicateStrategy"]:checked')?.value || 'ignore';
         const duplicatesCount = pendingImport.duplicates.length;
         const newEntriesCount = pendingImport.newEntries.length;
 
-        // Count how many duplicates will actually be updated based on strategy
-        let affectedCount = 0;
+        // Count strategies per duplicate
+        let ignoreCount = 0;
+        let replaceCount = 0;
+        let mergeCount = 0;
         let conflictCount = 0;
         let newFieldsCount = 0;
 
         const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
 
-        if (strategy === 'replace') {
-            affectedCount = duplicatesCount;
-        } else if (strategy === 'merge') {
-            pendingImport.duplicates.forEach(({ imported, existing }) => {
+        pendingImport.duplicates.forEach(({ imported, existing }, index) => {
+            const strategyRadio = document.querySelector(`input[name="duplicateStrategy_${index}"]:checked`);
+            const strategy = strategyRadio ? strategyRadio.value : 'merge';
+
+            if (strategy === 'ignore') {
+                ignoreCount++;
+            } else if (strategy === 'replace') {
+                replaceCount++;
+            } else if (strategy === 'merge') {
+                mergeCount++;
+
+                // Count merge details
                 let hasUpdates = false;
                 let hasConflicts = false;
 
@@ -330,10 +369,9 @@
                     }
                 });
 
-                if (hasUpdates) affectedCount++;
                 if (hasConflicts) conflictCount++;
-            });
-        }
+            }
+        });
 
         // Update preview text
         if (previewNewCount) {
@@ -344,26 +382,31 @@
             previewDuplicateText.textContent = `${duplicatesCount} duplicate${duplicatesCount !== 1 ? 's' : ''} found`;
         }
 
-        // Update details based on strategy
+        // Update details with per-duplicate strategy counts
         if (previewDetails) {
             let details = '';
-            if (strategy === 'ignore') {
-                details = `<div class="preview-details-item">• ${duplicatesCount} duplicate${duplicatesCount !== 1 ? 's' : ''} will be skipped</div>`;
-            } else if (strategy === 'replace') {
-                details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be completely replaced</div>`;
-                details += `<div class="preview-details-item text-warning">⚠️ All existing data will be overwritten</div>`;
-            } else if (strategy === 'merge') {
-                if (affectedCount > 0) {
-                    details = `<div class="preview-details-item">• ${affectedCount} contact${affectedCount !== 1 ? 's' : ''} will be updated</div>`;
-                    details += `<div class="preview-details-item">• ${newFieldsCount} empty field${newFieldsCount !== 1 ? 's' : ''} will be filled</div>`;
+
+            if (ignoreCount > 0) {
+                details += `<div class="preview-details-item">• ${ignoreCount} duplicate${ignoreCount !== 1 ? 's' : ''} will be ignored</div>`;
+            }
+            if (replaceCount > 0) {
+                details += `<div class="preview-details-item">• ${replaceCount} contact${replaceCount !== 1 ? 's' : ''} will be replaced</div>`;
+                details += `<div class="preview-details-item text-warning">  ⚠️ Existing data will be overwritten</div>`;
+            }
+            if (mergeCount > 0) {
+                details += `<div class="preview-details-item">• ${mergeCount} contact${mergeCount !== 1 ? 's' : ''} will be merged</div>`;
+                if (newFieldsCount > 0) {
+                    details += `<div class="preview-details-item">  ✓ ${newFieldsCount} empty field${newFieldsCount !== 1 ? 's' : ''} will be filled</div>`;
                 }
                 if (conflictCount > 0) {
-                    details += `<div class="preview-details-item">• ${conflictCount} contact${conflictCount !== 1 ? 's' : ''} ${conflictCount === 1 ? 'has' : 'have'} conflicts (existing data kept)</div>`;
-                }
-                if (affectedCount === 0 && conflictCount === 0) {
-                    details += `<div class="preview-details-item">• All duplicates already have complete data</div>`;
+                    details += `<div class="preview-details-item">  • ${conflictCount} contact${conflictCount !== 1 ? 's' : ''} ${conflictCount === 1 ? 'has' : 'have'} conflicts (kept)</div>`;
                 }
             }
+
+            if (details === '') {
+                details = '<div class="preview-details-item">• No changes will be made</div>';
+            }
+
             previewDetails.innerHTML = details;
         }
 
@@ -373,7 +416,7 @@
         }
     }
 
-    function createDuplicateComparison(name, existing, imported, matchType = 'name') {
+    function createDuplicateComparison(name, existing, imported, matchType = 'name', index = 0) {
         const phoneFields = [
             { key: 'office1', label: 'Office 1' },
             { key: 'office2', label: 'Office 2' },
@@ -440,6 +483,23 @@
                         ${rows}
                     </tbody>
                 </table>
+                <div class="per-duplicate-actions">
+                    <div class="per-duplicate-label">Action for this contact:</div>
+                    <div class="per-duplicate-options">
+                        <label class="per-duplicate-radio">
+                            <input type="radio" name="duplicateStrategy_${index}" value="ignore" class="per-duplicate-strategy" data-index="${index}">
+                            <span>Ignore</span>
+                        </label>
+                        <label class="per-duplicate-radio">
+                            <input type="radio" name="duplicateStrategy_${index}" value="replace" class="per-duplicate-strategy" data-index="${index}">
+                            <span>Replace</span>
+                        </label>
+                        <label class="per-duplicate-radio">
+                            <input type="radio" name="duplicateStrategy_${index}" value="merge" class="per-duplicate-strategy" data-index="${index}" checked>
+                            <span>Merge</span>
+                        </label>
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -447,8 +507,15 @@
     async function confirmImport() {
         if (!pendingImport) return;
 
-        const strategyEl = document.querySelector('input[name="duplicateStrategy"]:checked');
-        const strategy = strategyEl ? strategyEl.value : 'ignore';
+        // Collect per-duplicate strategies
+        const duplicatesWithStrategy = pendingImport.duplicates.map((duplicate, index) => {
+            const strategyRadio = document.querySelector(`input[name="duplicateStrategy_${index}"]:checked`);
+            const strategy = strategyRadio ? strategyRadio.value : 'merge';
+            return {
+                ...duplicate,
+                strategy: strategy
+            };
+        });
 
         try {
             const response = await fetch('/api/import-confirm', {
@@ -456,8 +523,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     newEntries: pendingImport.newEntries,
-                    duplicates: pendingImport.duplicates,
-                    strategy: strategy
+                    duplicates: duplicatesWithStrategy,
+                    perDuplicate: true
                 })
             });
             const result = await response.json();

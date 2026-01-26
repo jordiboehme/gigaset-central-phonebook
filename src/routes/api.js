@@ -292,7 +292,7 @@ router.post('/import-preview', upload.single('file'), (req, res) => {
 // POST /api/import-confirm - Confirm import with duplicate strategy
 router.post('/import-confirm', (req, res) => {
   try {
-    const { newEntries, duplicates, strategy } = req.body;
+    const { newEntries, duplicates, strategy, perDuplicate } = req.body;
 
     if (!Array.isArray(newEntries)) {
       return res.status(400).json({ error: 'newEntries must be an array' });
@@ -305,39 +305,72 @@ router.post('/import-confirm', (req, res) => {
       importedCount += storage.importEntries(newEntries);
     }
 
-    if (duplicates && duplicates.length > 0 && strategy !== 'ignore') {
-      const phonebook = storage.getAllEntries();
+    if (duplicates && duplicates.length > 0) {
+      const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
 
-      if (strategy === 'replace') {
-        // Overwrite existing entries with imported data
-        duplicates.forEach(({ imported, existing }) => {
-          storage.updateEntry(existing.id, {
-            surname: imported.surname || '',
-            name: imported.name || '',
-            office1: imported.office1 || '',
-            office2: imported.office2 || '',
-            mobile1: imported.mobile1 || '',
-            mobile2: imported.mobile2 || '',
-            home1: imported.home1 || '',
-            home2: imported.home2 || ''
-          });
-        });
-        importedCount += duplicates.length;
-      } else if (strategy === 'merge') {
-        // Fill empty phone fields from imported data
-        const phoneFields = ['office1', 'office2', 'mobile1', 'mobile2', 'home1', 'home2'];
-        duplicates.forEach(({ imported, existing }) => {
-          const updates = {};
-          phoneFields.forEach(field => {
-            if (!existing[field] && imported[field]) {
-              updates[field] = imported[field];
-            }
-          });
-          if (Object.keys(updates).length > 0) {
-            storage.updateEntry(existing.id, updates);
+      if (perDuplicate) {
+        // Handle per-duplicate strategies
+        duplicates.forEach(({ imported, existing, strategy: dupStrategy }) => {
+          const individualStrategy = dupStrategy || 'ignore';
+
+          if (individualStrategy === 'replace') {
+            storage.updateEntry(existing.id, {
+              surname: imported.surname || '',
+              name: imported.name || '',
+              office1: imported.office1 || '',
+              office2: imported.office2 || '',
+              mobile1: imported.mobile1 || '',
+              mobile2: imported.mobile2 || '',
+              home1: imported.home1 || '',
+              home2: imported.home2 || ''
+            });
             importedCount++;
+          } else if (individualStrategy === 'merge') {
+            const updates = {};
+            phoneFields.forEach(field => {
+              if (!existing[field] && imported[field]) {
+                updates[field] = imported[field];
+              }
+            });
+            if (Object.keys(updates).length > 0) {
+              storage.updateEntry(existing.id, updates);
+              importedCount++;
+            }
           }
+          // 'ignore' - do nothing
         });
+      } else {
+        // Handle global strategy (backward compatibility)
+        if (strategy !== 'ignore') {
+          if (strategy === 'replace') {
+            duplicates.forEach(({ imported, existing }) => {
+              storage.updateEntry(existing.id, {
+                surname: imported.surname || '',
+                name: imported.name || '',
+                office1: imported.office1 || '',
+                office2: imported.office2 || '',
+                mobile1: imported.mobile1 || '',
+                mobile2: imported.mobile2 || '',
+                home1: imported.home1 || '',
+                home2: imported.home2 || ''
+              });
+            });
+            importedCount += duplicates.length;
+          } else if (strategy === 'merge') {
+            duplicates.forEach(({ imported, existing }) => {
+              const updates = {};
+              phoneFields.forEach(field => {
+                if (!existing[field] && imported[field]) {
+                  updates[field] = imported[field];
+                }
+              });
+              if (Object.keys(updates).length > 0) {
+                storage.updateEntry(existing.id, updates);
+                importedCount++;
+              }
+            });
+          }
+        }
       }
     }
 
