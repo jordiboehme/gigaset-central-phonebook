@@ -190,12 +190,76 @@
         if (duplicateList) {
             duplicateList.innerHTML = result.duplicates.map(d => {
                 const name = `${escapeHtml(d.imported.surname)}${d.imported.surname && d.imported.name ? ', ' : ''}${escapeHtml(d.imported.name)}`;
-                return `<div class="duplicate-item">
-                    <span class="duplicate-name">${name}</span>
-                    <span class="badge badge-warning">Duplicate</span>
-                </div>`;
+                return createDuplicateComparison(name, d.existing, d.imported);
             }).join('');
         }
+    }
+
+    function createDuplicateComparison(name, existing, imported) {
+        const phoneFields = [
+            { key: 'office1', label: 'Office 1' },
+            { key: 'office2', label: 'Office 2' },
+            { key: 'mobile1', label: 'Mobile 1' },
+            { key: 'mobile2', label: 'Mobile 2' },
+            { key: 'home1', label: 'Home 1' },
+            { key: 'home2', label: 'Home 2' }
+        ];
+
+        const rows = phoneFields.map(field => {
+            const existingVal = existing[field.key] || '';
+            const importedVal = imported[field.key] || '';
+
+            let status = '';
+            let statusClass = '';
+
+            if (existingVal && importedVal && existingVal !== importedVal) {
+                status = '⚠️ Conflict';
+                statusClass = 'conflict';
+            } else if (!existingVal && importedVal) {
+                status = '✓ New data';
+                statusClass = 'new-data';
+            } else if (existingVal === importedVal && existingVal) {
+                status = '✓ Same';
+                statusClass = 'same';
+            } else if (!existingVal && !importedVal) {
+                status = '—';
+                statusClass = 'empty';
+            } else {
+                status = '—';
+                statusClass = 'no-change';
+            }
+
+            return `
+                <tr class="comparison-row ${statusClass}">
+                    <td class="comparison-label">${field.label}</td>
+                    <td class="comparison-existing">${escapeHtml(existingVal) || '<span class="text-muted">—</span>'}</td>
+                    <td class="comparison-imported">${escapeHtml(importedVal) || '<span class="text-muted">—</span>'}</td>
+                    <td class="comparison-status">${status}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="duplicate-comparison">
+                <div class="duplicate-comparison-header">
+                    <span class="duplicate-name">${name}</span>
+                    <span class="badge badge-warning">Duplicate</span>
+                </div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Existing</th>
+                            <th>Imported</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
     async function confirmImport() {

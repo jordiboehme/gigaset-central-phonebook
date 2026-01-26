@@ -1641,7 +1641,7 @@ th.sortable:hover {
 }
 
 .duplicate-list {
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -1664,6 +1664,107 @@ th.sortable:hover {
 .duplicate-name {
     color: var(--text-primary);
     font-weight: 500;
+}
+
+/* Duplicate comparison table */
+.duplicate-comparison {
+    border-bottom: 1px solid var(--divider);
+    padding: var(--space-3);
+}
+
+.duplicate-comparison:last-child {
+    border-bottom: none;
+}
+
+.duplicate-comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--divider);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-xs);
+}
+
+.comparison-table th {
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: var(--space-2);
+    background: var(--bg-secondary);
+    font-size: var(--text-xs);
+}
+
+.comparison-table td {
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--divider);
+    font-size: var(--text-sm);
+}
+
+.comparison-table tr:last-child td {
+    border-bottom: none;
+}
+
+.comparison-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    width: 20%;
+}
+
+.comparison-existing {
+    width: 30%;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.comparison-imported {
+    width: 30%;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.comparison-status {
+    width: 20%;
+    font-size: var(--text-xs);
+    font-weight: 500;
+}
+
+/* Status indicators */
+.comparison-row.conflict {
+    background: rgba(245, 23, 79, 0.05);
+}
+
+.comparison-row.conflict .comparison-status {
+    color: var(--error);
+}
+
+.comparison-row.new-data {
+    background: rgba(0, 202, 139, 0.05);
+}
+
+.comparison-row.new-data .comparison-status {
+    color: var(--success);
+}
+
+.comparison-row.same .comparison-status {
+    color: var(--text-muted);
+}
+
+.comparison-row.empty,
+.comparison-row.no-change {
+    opacity: 0.5;
+}
+
+.comparison-row.empty .comparison-status,
+.comparison-row.no-change .comparison-status {
+    color: var(--text-muted);
 }
 
 /* Radio labels */
