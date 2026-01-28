@@ -283,6 +283,7 @@
       closeEntryModal();
       clearValidation();
       await loadEntries(searchInput.value.trim());
+      checkGigasetRefreshStatus();
     } catch (error) {
       console.error('Failed to save entry:', error);
     }
@@ -305,6 +306,7 @@
         selectedIds.delete(id);
         clearValidation();
         await loadEntries(searchInput.value.trim());
+        checkGigasetRefreshStatus();
       } catch (error) {
         console.error('Failed to delete entry:', error);
       }
@@ -324,6 +326,7 @@
         selectedIds.clear();
         clearValidation();
         await loadEntries(searchInput.value.trim());
+        checkGigasetRefreshStatus();
       } catch (error) {
         console.error('Failed to delete entries:', error);
       }
@@ -640,6 +643,7 @@
   window.refreshEntries = () => {
     clearValidation();
     loadEntries(searchInput.value.trim());
+    checkGigasetRefreshStatus();
   };
 
   // Gigaset refresh banner
