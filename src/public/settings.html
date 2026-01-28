@@ -74,7 +74,7 @@
                     <div class="theme-toggle-track"></div>
                     <span class="theme-toggle-label">Dark Mode</span>
                 </div>
-                <div class="sidebar-version">v1.1.2</div>
+                <div class="sidebar-version">v1.2.0</div>
             </div>
         </aside>
 
@@ -266,7 +266,7 @@
                 </div>
 
                 <!-- Section 3: Apply to Existing Entries -->
-                <div class="card">
+                <div class="card mb-4">
                     <div class="card-body">
                         <div class="form-section mb-0">
                             <div class="form-section-title">Apply to Existing Entries</div>
@@ -286,6 +286,63 @@
                         <button id="convertAllBtn" class="btn btn-secondary" disabled>
                             <svg><use href="#icon-refresh"></use></svg>
                             Apply Transformations to All Entries
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Gigaset Device Integration -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-section">
+                            <div class="form-section-title">Gigaset Device Integration</div>
+                            <p class="text-secondary mb-4">
+                                Connect to your Gigaset DECT system to trigger phonebook refresh directly from this interface.
+                            </p>
+
+                            <div class="form-group">
+                                <label class="form-label" for="gigasetDeviceUrl">Device URL</label>
+                                <input type="text" class="form-control" id="gigasetDeviceUrl" placeholder="https://gigaset.lan or 192.168.1.100">
+                                <div class="form-hint">The URL or IP address of your Gigaset N870/N670/N610 device</div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="gigasetUsername">Username</label>
+                                    <input type="text" class="form-control" id="gigasetUsername" placeholder="admin">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="gigasetPassword">Password</label>
+                                    <input type="password" class="form-control" id="gigasetPassword" placeholder="Enter password">
+                                </div>
+                            </div>
+
+                            <div id="gigasetStatus" class="alert hidden">
+                                <svg><use href="#icon-alert"></use></svg>
+                                <div class="alert-content">
+                                    <div class="alert-message" id="gigasetStatusMessage"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="radio-label">
+                                    <input type="checkbox" id="gigasetShowReminder" checked>
+                                    <span><strong>Show refresh reminder</strong> — Display a banner on the main page when phonebook changes</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button id="gigasetTestBtn" class="btn btn-secondary" disabled>
+                            <svg><use href="#icon-check"></use></svg>
+                            Test Connection
+                        </button>
+                        <button id="gigasetSaveBtn" class="btn btn-primary" disabled>
+                            <svg><use href="#icon-check"></use></svg>
+                            Save Settings
+                        </button>
+                        <button id="gigasetRefreshBtn" class="btn btn-secondary" disabled>
+                            <svg><use href="#icon-refresh"></use></svg>
+                            Refresh Phonebook Now
                         </button>
                     </div>
                 </div>
