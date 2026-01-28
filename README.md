@@ -2,6 +2,8 @@
 
 A web-based phonebook management server that generates XML phonebook files for Gigaset DECT phone systems. Features a responsive web UI for managing contacts and serves the phonebook XML directly to Gigaset devices.
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V31T6CL9)
+
 ![Gigaset Central Phonebook Screenshot](docs/images/screenshot.png)
 
 ## Compatible Devices
