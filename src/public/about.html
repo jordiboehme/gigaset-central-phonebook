@@ -173,6 +173,10 @@
                                 <svg><use href="#icon-api"></use></svg>
                                 XML Endpoint
                             </a>
+                            <a id="gigasetDeviceLink" href="#" class="about-link hidden" target="_blank" rel="noopener">
+                                <svg><use href="#icon-logo"></use></svg>
+                                Gigaset Pro IP
+                            </a>
                         </div>
                     </div>
 
@@ -367,5 +371,25 @@
     <!-- Scripts -->
     <script src="js/main.js"></script>
     <script src="js/import-export.js"></script>
+    <script>
+        // Show Gigaset device link if configured
+        (async function() {
+            try {
+                const response = await fetch('/api/gigaset/status');
+                const status = await response.json();
+                if (status.configured && status.deviceUrl) {
+                    const link = document.getElementById('gigasetDeviceLink');
+                    let url = status.deviceUrl;
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://' + url;
+                    }
+                    link.href = url;
+                    link.classList.remove('hidden');
+                }
+            } catch (error) {
+                // Ignore errors
+            }
+        })();
+    </script>
 </body>
 </html>
