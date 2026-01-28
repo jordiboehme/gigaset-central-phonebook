@@ -1,21 +1,38 @@
 const https = require('https');
 const http = require('http');
 const crypto = require('crypto');
-const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 // Timeout for API calls (10 seconds)
 const API_TIMEOUT_MS = 10000;
 
+const DATA_DIR = path.join(process.cwd(), 'data');
+const KEY_FILE = path.join(DATA_DIR, '.encryption-key');
+
 /**
- * Derive an encryption key from machine-specific data.
+ * Derive an encryption key from a persistent salt file.
+ * The salt is generated once and stored in the data directory, so it
+ * survives container restarts and moves in Docker Swarm/Kubernetes.
  * Note: This is obfuscation, not true security - the key can be derived by
- * anyone with access to the machine. The purpose is to prevent casual reading
- * of passwords in settings.json.
+ * anyone with access to the data directory. The purpose is to prevent casual
+ * reading of passwords in settings.json.
  */
 function deriveKey() {
-  const hostname = os.hostname();
-  const salt = 'gigaset-phonebook-salt';
-  return crypto.scryptSync(hostname + salt, salt, 32);
+  let salt;
+
+  if (fs.existsSync(KEY_FILE)) {
+    salt = fs.readFileSync(KEY_FILE, 'utf8');
+  } else {
+    // Ensure data directory exists
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    salt = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(KEY_FILE, salt, 'utf8');
+  }
+
+  return crypto.scryptSync(salt, 'gigaset-phonebook', 32);
 }
 
 /**
