@@ -22,6 +22,17 @@
   const convertAllBtn = document.getElementById('convertAllBtn');
   const conversionStatusEl = document.getElementById('conversionStatus');
 
+  // DOM Elements - Gigaset Section
+  const gigasetDeviceUrlEl = document.getElementById('gigasetDeviceUrl');
+  const gigasetUsernameEl = document.getElementById('gigasetUsername');
+  const gigasetPasswordEl = document.getElementById('gigasetPassword');
+  const gigasetShowReminderEl = document.getElementById('gigasetShowReminder');
+  const gigasetStatusEl = document.getElementById('gigasetStatus');
+  const gigasetStatusMessageEl = document.getElementById('gigasetStatusMessage');
+  const gigasetTestBtn = document.getElementById('gigasetTestBtn');
+  const gigasetSaveBtn = document.getElementById('gigasetSaveBtn');
+  const gigasetRefreshBtn = document.getElementById('gigasetRefreshBtn');
+
   // Sample international codes for preview (different from local)
   const sampleInternationalCodes = {
     '+1': '+44', '+7': '+49', '+20': '+33', '+27': '+44', '+30': '+49',
@@ -48,6 +59,7 @@
   async function init() {
     await loadSettings();
     await loadConversionStatus();
+    await loadGigasetStatus();
     bindEvents();
     updatePreview();
   }
@@ -65,6 +77,14 @@
 
     // Apply section
     convertAllBtn.addEventListener('click', convertAllEntries);
+
+    // Gigaset section
+    gigasetDeviceUrlEl.addEventListener('input', updateGigasetButtons);
+    gigasetUsernameEl.addEventListener('input', updateGigasetButtons);
+    gigasetPasswordEl.addEventListener('input', updateGigasetButtons);
+    gigasetTestBtn.addEventListener('click', testGigasetConnection);
+    gigasetSaveBtn.addEventListener('click', saveGigasetSettings);
+    gigasetRefreshBtn.addEventListener('click', refreshGigasetPhonebook);
   }
 
   async function loadSettings() {
@@ -279,6 +299,154 @@
     } finally {
       convertAllBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Apply Transformations to All Entries';
       await loadConversionStatus();
+    }
+  }
+
+  // Gigaset functions
+  let gigasetConfigured = false;
+
+  async function loadGigasetStatus() {
+    try {
+      const response = await fetch('/api/gigaset/status');
+      const status = await response.json();
+
+      gigasetDeviceUrlEl.value = status.deviceUrl || '';
+      gigasetUsernameEl.value = status.username || '';
+      gigasetShowReminderEl.checked = status.showRefreshReminder !== false;
+
+      // Password field is left empty - placeholder indicates if configured
+      if (status.hasPassword) {
+        gigasetPasswordEl.placeholder = 'Password saved (enter new to change)';
+      }
+
+      gigasetConfigured = status.configured;
+      updateGigasetButtons();
+    } catch (error) {
+      console.error('Failed to load Gigaset status:', error);
+    }
+  }
+
+  function updateGigasetButtons() {
+    const hasUrl = gigasetDeviceUrlEl.value.trim().length > 0;
+    const hasUsername = gigasetUsernameEl.value.trim().length > 0;
+    const hasPassword = gigasetPasswordEl.value.length > 0;
+
+    // Test and Save require all fields or existing config with new values
+    const canTestOrSave = hasUrl && hasUsername && hasPassword;
+    gigasetTestBtn.disabled = !canTestOrSave;
+    gigasetSaveBtn.disabled = !canTestOrSave;
+
+    // Refresh requires device to be configured
+    gigasetRefreshBtn.disabled = !gigasetConfigured;
+  }
+
+  function showGigasetStatus(message, type) {
+    gigasetStatusEl.className = `alert alert-${type}`;
+    gigasetStatusMessageEl.textContent = message;
+    gigasetStatusEl.classList.remove('hidden');
+  }
+
+  function hideGigasetStatus() {
+    gigasetStatusEl.classList.add('hidden');
+  }
+
+  async function testGigasetConnection() {
+    const deviceUrl = gigasetDeviceUrlEl.value.trim();
+    const username = gigasetUsernameEl.value.trim();
+    const password = gigasetPasswordEl.value;
+
+    gigasetTestBtn.disabled = true;
+    gigasetTestBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Testing...';
+
+    try {
+      const response = await fetch('/api/gigaset/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceUrl, username, password })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showGigasetStatus('Connection successful! Device is reachable.', 'success');
+      } else {
+        showGigasetStatus(result.message || 'Connection failed', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to test connection:', error);
+      showGigasetStatus('Failed to test connection', 'error');
+    } finally {
+      gigasetTestBtn.disabled = false;
+      gigasetTestBtn.innerHTML = '<svg><use href="#icon-check"></use></svg> Test Connection';
+    }
+  }
+
+  async function saveGigasetSettings() {
+    const deviceUrl = gigasetDeviceUrlEl.value.trim();
+    const username = gigasetUsernameEl.value.trim();
+    const password = gigasetPasswordEl.value;
+    const showRefreshReminder = gigasetShowReminderEl.checked;
+
+    gigasetSaveBtn.disabled = true;
+    gigasetSaveBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Saving...';
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gigaset: {
+            deviceUrl,
+            username,
+            password,
+            showRefreshReminder
+          }
+        })
+      });
+
+      if (response.ok) {
+        showGigasetStatus('Gigaset settings saved successfully', 'success');
+        gigasetConfigured = true;
+        gigasetPasswordEl.value = '';
+        gigasetPasswordEl.placeholder = 'Password saved (enter new to change)';
+        updateGigasetButtons();
+        if (window.showToast) window.showToast('Gigaset settings saved');
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      console.error('Failed to save Gigaset settings:', error);
+      showGigasetStatus('Failed to save settings', 'error');
+    } finally {
+      gigasetSaveBtn.disabled = false;
+      gigasetSaveBtn.innerHTML = '<svg><use href="#icon-check"></use></svg> Save Settings';
+    }
+  }
+
+  async function refreshGigasetPhonebook() {
+    gigasetRefreshBtn.disabled = true;
+    gigasetRefreshBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Refreshing...';
+
+    try {
+      const response = await fetch('/api/gigaset/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showGigasetStatus('Phonebook refresh triggered on device', 'success');
+        if (window.showToast) window.showToast('Phonebook refreshed on Gigaset device');
+      } else {
+        showGigasetStatus(result.message || 'Refresh failed', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to refresh phonebook:', error);
+      showGigasetStatus('Failed to refresh phonebook', 'error');
+    } finally {
+      gigasetRefreshBtn.disabled = !gigasetConfigured;
+      gigasetRefreshBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Refresh Phonebook Now';
     }
   }
 

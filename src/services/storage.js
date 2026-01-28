@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cache = require('./cache');
+const timestamps = require('./timestamps');
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const PHONEBOOK_FILE = path.join(DATA_DIR, 'phonebook.json');
@@ -25,6 +26,7 @@ function savePhonebook(phonebook) {
   ensureDataDir();
   fs.writeFileSync(PHONEBOOK_FILE, JSON.stringify(phonebook, null, 2), 'utf8');
   cache.invalidate();
+  timestamps.updatePhonebookModified();
 }
 
 function generateId() {

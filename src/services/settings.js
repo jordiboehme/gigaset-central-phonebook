@@ -8,7 +8,13 @@ const DEFAULT_SETTINGS = {
   localCountryCode: '',
   phoneFormatConversion: false,
   removeSeparators: false,
-  removeSpaces: false
+  removeSpaces: false,
+  gigaset: {
+    deviceUrl: '',
+    username: '',
+    password: '',
+    showRefreshReminder: true
+  }
 };
 
 function ensureDataDir() {
@@ -20,13 +26,22 @@ function ensureDataDir() {
 function loadSettings() {
   ensureDataDir();
   if (!fs.existsSync(SETTINGS_FILE)) {
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, gigaset: { ...DEFAULT_SETTINGS.gigaset } };
   }
   try {
     const data = fs.readFileSync(SETTINGS_FILE, 'utf8');
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+    const parsed = JSON.parse(data);
+    // Deep merge for nested gigaset object
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      gigaset: {
+        ...DEFAULT_SETTINGS.gigaset,
+        ...(parsed.gigaset || {})
+      }
+    };
   } catch (error) {
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, gigaset: { ...DEFAULT_SETTINGS.gigaset } };
   }
 }
 
@@ -50,6 +65,18 @@ function updateSettings(updates) {
     removeSeparators: updates.removeSeparators !== undefined ? updates.removeSeparators : current.removeSeparators,
     removeSpaces: updates.removeSpaces !== undefined ? updates.removeSpaces : current.removeSpaces
   };
+
+  // Handle nested gigaset settings
+  if (updates.gigaset !== undefined) {
+    const currentGigaset = current.gigaset || DEFAULT_SETTINGS.gigaset;
+    updated.gigaset = {
+      deviceUrl: updates.gigaset.deviceUrl !== undefined ? updates.gigaset.deviceUrl : currentGigaset.deviceUrl,
+      username: updates.gigaset.username !== undefined ? updates.gigaset.username : currentGigaset.username,
+      password: updates.gigaset.password !== undefined ? updates.gigaset.password : currentGigaset.password,
+      showRefreshReminder: updates.gigaset.showRefreshReminder !== undefined ? updates.gigaset.showRefreshReminder : currentGigaset.showRefreshReminder
+    };
+  }
+
   return saveSettings(updated);
 }
 

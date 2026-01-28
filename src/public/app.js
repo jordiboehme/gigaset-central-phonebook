@@ -53,6 +53,7 @@
     await loadEntries();
     bindEvents();
     checkConversionStatus();
+    checkGigasetRefreshStatus();
   }
 
   function bindEvents() {
@@ -640,6 +641,100 @@
     clearValidation();
     loadEntries(searchInput.value.trim());
   };
+
+  // Gigaset refresh banner
+  async function checkGigasetRefreshStatus() {
+    try {
+      const response = await fetch('/api/gigaset/status');
+      const status = await response.json();
+
+      // Only show banner if:
+      // - Device is configured
+      // - Refresh reminder is enabled
+      // - Phonebook needs refresh
+      if (status.configured && status.showRefreshReminder && status.needsRefresh) {
+        showGigasetRefreshBanner();
+      }
+    } catch (error) {
+      console.error('Failed to check Gigaset status:', error);
+    }
+  }
+
+  function showGigasetRefreshBanner() {
+    // Don't show if already visible
+    if (document.getElementById('gigasetRefreshBanner')) {
+      return;
+    }
+
+    const banner = document.createElement('div');
+    banner.id = 'gigasetRefreshBanner';
+    banner.className = 'alert alert-info mb-4';
+    banner.innerHTML = `
+      <svg><use href="#icon-alert"></use></svg>
+      <div class="alert-content">
+        <div class="alert-message">
+          <strong>Phonebook has changed.</strong> Refresh your Gigaset device to sync the latest contacts.
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-sm btn-primary" id="gigasetBannerRefreshBtn">
+          <svg><use href="#icon-refresh"></use></svg>
+          Refresh Now
+        </button>
+        <button class="btn btn-sm btn-ghost" id="gigasetBannerDismissBtn">
+          Dismiss
+        </button>
+      </div>
+    `;
+
+    // Insert after stats grid
+    const statsGrid = document.querySelector('.stats-grid');
+    if (statsGrid && statsGrid.nextSibling) {
+      statsGrid.parentNode.insertBefore(banner, statsGrid.nextSibling);
+    }
+
+    // Bind events
+    document.getElementById('gigasetBannerRefreshBtn').addEventListener('click', handleBannerRefresh);
+    document.getElementById('gigasetBannerDismissBtn').addEventListener('click', dismissGigasetBanner);
+  }
+
+  async function handleBannerRefresh() {
+    const refreshBtn = document.getElementById('gigasetBannerRefreshBtn');
+    if (!refreshBtn) return;
+
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Refreshing...';
+
+    try {
+      const response = await fetch('/api/gigaset/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        dismissGigasetBanner();
+        if (window.showToast) window.showToast('Phonebook refreshed on Gigaset device');
+      } else {
+        if (window.showToast) window.showToast(result.message || 'Refresh failed', 'error');
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Refresh Now';
+      }
+    } catch (error) {
+      console.error('Failed to refresh phonebook:', error);
+      if (window.showToast) window.showToast('Failed to refresh phonebook', 'error');
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<svg><use href="#icon-refresh"></use></svg> Refresh Now';
+    }
+  }
+
+  function dismissGigasetBanner() {
+    const banner = document.getElementById('gigasetRefreshBanner');
+    if (banner) {
+      banner.remove();
+    }
+  }
 
   // Initialize on DOM ready
   document.addEventListener('DOMContentLoaded', init);
