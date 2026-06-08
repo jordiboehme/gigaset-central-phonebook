@@ -1,6 +1,6 @@
 {
   "name": "gigaset-central-phonebook",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Central phonebook server for Gigaset DECT phone systems",
   "main": "src/server.js",
   "scripts": {
