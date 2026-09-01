@@ -7,7 +7,7 @@ const path = require('path');
 // Timeout for API calls (10 seconds)
 const API_TIMEOUT_MS = 10000;
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const KEY_FILE = path.join(DATA_DIR, '.encryption-key');
 
 /**

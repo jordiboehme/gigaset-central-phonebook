@@ -1,5 +1,8 @@
 # Gigaset Central Phonebook
 
+[![Tests](https://github.com/jordiboehme/gigaset-central-phonebook/actions/workflows/test.yml/badge.svg)](https://github.com/jordiboehme/gigaset-central-phonebook/actions/workflows/test.yml)
+[![Docker](https://github.com/jordiboehme/gigaset-central-phonebook/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/jordiboehme/gigaset-central-phonebook/actions/workflows/docker-publish.yml)
+
 A web-based phonebook management server that generates XML phonebook files for Gigaset DECT phone systems. Features a responsive web UI for managing contacts and serves the phonebook XML directly to Gigaset devices.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V31T6CL9)
@@ -55,11 +58,12 @@ The server starts at http://localhost:3000
 
 ## Configuration
 
-| Variable    | Description                    | Default |
-| ----------- | ------------------------------ | ------- |
-| `PORT`      | Server port                    | `3000`  |
-| `AUTH_USER` | Basic auth username (optional) | -       |
-| `AUTH_PASS` | Basic auth password (optional) | -       |
+| Variable    | Description                    | Default  |
+| ----------- | ------------------------------ | -------- |
+| `PORT`      | Server port                    | `3000`   |
+| `AUTH_USER` | Basic auth username (optional) | -        |
+| `AUTH_PASS` | Basic auth password (optional) | -        |
+| `DATA_DIR`  | Directory for phonebook data   | `./data` |
 
 Set these in your environment or in `docker-compose.yml`.
 

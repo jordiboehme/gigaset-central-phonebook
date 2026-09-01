@@ -1,72 +1,11 @@
-const express = require('express');
-const path = require('path');
-const crypto = require('crypto');
-const apiRoutes = require('./routes/api');
-const phonebookRoutes = require('./routes/phonebook');
-const settingsRoutes = require('./routes/settings');
-const gigasetRoutes = require('./routes/gigaset');
+const { createApp } = require('./app');
 
-const app = express();
-app.disable('x-powered-by');
 const PORT = process.env.PORT || 3000;
 const AUTH_USER = process.env.AUTH_USER;
 const AUTH_PASS = process.env.AUTH_PASS;
 
-// Constant-time string comparison to avoid leaking credential length/content via timing
-function safeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) {
-    crypto.timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
-}
+const app = createApp({ authUser: AUTH_USER, authPass: AUTH_PASS });
 
-// Basic auth middleware
-function basicAuth(req, res, next) {
-  // Skip auth if credentials not configured
-  if (!AUTH_USER || !AUTH_PASS) {
-    return next();
-  }
-
-  // Allow phonebook.xml endpoint without auth (for Gigaset devices)
-  if (req.path === '/phonebook.xml') {
-    return next();
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Phonebook"');
-    return res.status(401).send('Authentication required');
-  }
-
-  const credentials = Buffer.from(authHeader.slice(6), 'base64').toString();
-  // Split on the first colon only, so passwords containing ':' work
-  const colonIndex = credentials.indexOf(':');
-  const user = colonIndex === -1 ? credentials : credentials.slice(0, colonIndex);
-  const pass = colonIndex === -1 ? '' : credentials.slice(colonIndex + 1);
-
-  if (safeEqual(user, AUTH_USER) && safeEqual(pass, AUTH_PASS)) {
-    return next();
-  }
-
-  res.setHeader('WWW-Authenticate', 'Basic realm="Phonebook"');
-  return res.status(401).send('Invalid credentials');
-}
-
-// Middleware
-app.use(basicAuth);
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Routes
-app.use('/api', apiRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/gigaset', gigasetRoutes);
-app.use('/', phonebookRoutes);
-
-// Start server
 app.listen(PORT, () => {
   console.log(`Gigaset Phonebook Server running on port ${PORT}`);
   console.log(`Web UI: http://localhost:${PORT}`);

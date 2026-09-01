@@ -4,7 +4,7 @@ const { randomUUID } = require('crypto');
 const cache = require('./cache');
 const timestamps = require('./timestamps');
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const PHONEBOOK_FILE = path.join(DATA_DIR, 'phonebook.json');
 
 function ensureDataDir() {

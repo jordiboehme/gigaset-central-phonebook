@@ -5,3 +5,4 @@ spec/
 *.log
 .DS_Store
 CLAUDE.md
+.serena/

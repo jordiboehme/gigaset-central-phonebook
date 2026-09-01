@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const TIMESTAMPS_FILE = path.join(DATA_DIR, 'timestamps.json');
 
 // 24 hours in milliseconds
