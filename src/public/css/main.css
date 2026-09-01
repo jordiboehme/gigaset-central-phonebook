@@ -1528,6 +1528,16 @@ th.sortable:hover {
     background: var(--bg-elevated);
 }
 
+th.sortable.sorted-asc::after {
+    content: ' \2191';
+    color: var(--text-muted);
+}
+
+th.sortable.sorted-desc::after {
+    content: ' \2193';
+    color: var(--text-muted);
+}
+
 /* Contact name styling */
 .contact-name {
     font-weight: 500;

@@ -95,6 +95,29 @@
     document.querySelectorAll('th.sortable').forEach(th => {
       th.addEventListener('click', () => handleSort(th.dataset.sort));
     });
+
+    // Escape closes whichever modal is open
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!confirmModal.classList.contains('hidden')) {
+        closeConfirmModal();
+      } else if (!entryModal.classList.contains('hidden')) {
+        closeEntryModal();
+      } else if (duplicatesModal && !duplicatesModal.classList.contains('hidden')) {
+        closeDuplicatesModal();
+      }
+    });
+
+    updateSortIndicator();
+  }
+
+  function updateSortIndicator() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.classList.remove('sorted-asc', 'sorted-desc');
+      if (th.dataset.sort === sortField) {
+        th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+      }
+    });
   }
 
   async function loadEntries(search = '') {
@@ -187,6 +210,36 @@
     entryCountEl.textContent = entries.length;
     selectedCountEl.textContent = selectedIds.size;
     deleteSelectedBtn.disabled = selectedIds.size === 0;
+    updateCapacityWarning();
+  }
+
+  // Gigaset devices accept at most 2000 entries (500 on the N530)
+  const DEVICE_ENTRY_LIMIT = 2000;
+
+  function updateCapacityWarning() {
+    const searchActive = searchInput.value.trim().length > 0;
+    let warningEl = document.getElementById('capacityWarning');
+    if (!searchActive && entries.length > DEVICE_ENTRY_LIMIT) {
+      if (!warningEl) {
+        warningEl = document.createElement('div');
+        warningEl.id = 'capacityWarning';
+        warningEl.className = 'alert alert-warning mb-4';
+        warningEl.innerHTML = `
+          <svg><use href="#icon-alert"></use></svg>
+          <div class="alert-content">
+            <div class="alert-message"></div>
+          </div>
+        `;
+        const statsGrid = document.querySelector('.stats-grid');
+        if (statsGrid && statsGrid.nextSibling) {
+          statsGrid.parentNode.insertBefore(warningEl, statsGrid.nextSibling);
+        }
+      }
+      warningEl.querySelector('.alert-message').textContent =
+        `The phonebook has ${entries.length} contacts, but Gigaset devices load at most ${DEVICE_ENTRY_LIMIT} (500 on the N530). Entries beyond the limit will be ignored by the device.`;
+    } else if (warningEl && !searchActive) {
+      warningEl.remove();
+    }
   }
 
   function updateSelectAll() {
@@ -209,6 +262,7 @@
     }
     sortEntries();
     renderTable();
+    updateSortIndicator();
   }
 
   function handleSelectAll() {
@@ -266,26 +320,36 @@
       home2: document.getElementById('home2').value
     };
 
+    // A contact with no name and no phone number would be invisible on the phone
+    const hasContent = Object.values(data).some(v => v.trim());
+    if (!hasContent) {
+      if (window.showToast) window.showToast('Enter at least a name or a phone number', 'error');
+      return;
+    }
+
     try {
-      if (id) {
-        await fetch(`/api/entries/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-      } else {
-        await fetch('/api/entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+      const response = id
+        ? await fetch(`/api/entries/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          })
+        : await fetch('/api/entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
       }
       closeEntryModal();
       clearValidation();
       await loadEntries(searchInput.value.trim());
       checkGigasetRefreshStatus();
+      if (window.showToast) window.showToast(id ? 'Contact updated' : 'Contact added');
     } catch (error) {
       console.error('Failed to save entry:', error);
+      if (window.showToast) window.showToast('Failed to save contact', 'error');
     }
   }
 
@@ -302,13 +366,16 @@
     confirmMessage.textContent = `Are you sure you want to delete ${name}?`;
     deleteCallback = async () => {
       try {
-        await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`Server responded with ${response.status}`);
         selectedIds.delete(id);
         clearValidation();
         await loadEntries(searchInput.value.trim());
         checkGigasetRefreshStatus();
+        if (window.showToast) window.showToast('Contact deleted');
       } catch (error) {
         console.error('Failed to delete entry:', error);
+        if (window.showToast) window.showToast('Failed to delete contact', 'error');
       }
     };
     confirmModal.classList.remove('hidden');
@@ -316,19 +383,23 @@
 
   function handleDeleteSelected() {
     confirmMessage.textContent = `Are you sure you want to delete ${selectedIds.size} contact${selectedIds.size !== 1 ? 's' : ''}?`;
+    const count = selectedIds.size;
     deleteCallback = async () => {
       try {
-        await fetch('/api/entries', {
+        const response = await fetch('/api/entries', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids: Array.from(selectedIds) })
         });
+        if (!response.ok) throw new Error(`Server responded with ${response.status}`);
         selectedIds.clear();
         clearValidation();
         await loadEntries(searchInput.value.trim());
         checkGigasetRefreshStatus();
+        if (window.showToast) window.showToast(`Deleted ${count} contact${count !== 1 ? 's' : ''}`);
       } catch (error) {
         console.error('Failed to delete entries:', error);
+        if (window.showToast) window.showToast('Failed to delete contacts', 'error');
       }
     };
     confirmModal.classList.remove('hidden');

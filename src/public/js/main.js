@@ -70,8 +70,10 @@
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `
             <svg><use href="#icon-${type === 'success' ? 'check' : 'alert'}"></use></svg>
-            <span class="toast-message">${message}</span>
+            <span class="toast-message"></span>
         `;
+        // Set via textContent so server-provided messages can't inject HTML
+        toast.querySelector('.toast-message').textContent = message;
 
         toastContainer.appendChild(toast);
 
