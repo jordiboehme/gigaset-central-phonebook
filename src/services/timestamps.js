@@ -28,7 +28,9 @@ function loadTimestamps() {
 
 function saveTimestamps(timestamps) {
   ensureDataDir();
-  fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(timestamps, null, 2), 'utf8');
+  const tmpFile = TIMESTAMPS_FILE + '.tmp';
+  fs.writeFileSync(tmpFile, JSON.stringify(timestamps, null, 2), 'utf8');
+  fs.renameSync(tmpFile, TIMESTAMPS_FILE);
 }
 
 /**

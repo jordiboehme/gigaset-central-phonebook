@@ -2,6 +2,7 @@ const express = require('express');
 const storage = require('../services/storage');
 const xml = require('../services/xml');
 const cache = require('../services/cache');
+const timestamps = require('../services/timestamps');
 
 const router = express.Router();
 
@@ -14,7 +15,10 @@ router.get('/phonebook.xml', (req, res) => {
     if (!cached) {
       const entries = storage.getAllEntries();
       const xmlContent = xml.generatePhonebookXml(entries);
-      cached = cache.set(xmlContent);
+      // Use the persisted modification time so Last-Modified survives
+      // restarts and devices don't re-download an unchanged phonebook
+      const modified = timestamps.getTimestamps().phonebookModified;
+      cached = cache.set(xmlContent, modified ? new Date(modified) : undefined);
     }
 
     // Check If-None-Match header (ETag)

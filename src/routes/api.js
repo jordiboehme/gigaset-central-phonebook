@@ -5,7 +5,12 @@ const vcard = require('../services/vcard');
 const phoneFormatter = require('../services/phoneFormatter');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// Uploads are buffered in memory; cap them well above any realistic
+// phonebook (2000 entries) but low enough that junk can't exhaust RAM
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024, files: 1 }
+});
 
 // GET /api/entries - List all entries (with optional search)
 router.get('/entries', (req, res) => {
@@ -496,6 +501,15 @@ router.get('/entries/find-duplicates', (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to find duplicates' });
   }
+});
+
+// Turn multer errors into JSON responses instead of HTML error pages
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    return res.status(status).json({ error: `Upload rejected: ${err.message}` });
+  }
+  next(err);
 });
 
 module.exports = router;

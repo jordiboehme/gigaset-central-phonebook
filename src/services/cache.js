@@ -10,11 +10,11 @@ function get() {
   return cache.xml ? cache : null;
 }
 
-function set(xml) {
+function set(xml, lastModified) {
   cache = {
     xml,
     eTag: crypto.createHash('md5').update(xml).digest('hex'),
-    lastModified: new Date()
+    lastModified: lastModified || new Date()
   };
   return cache;
 }

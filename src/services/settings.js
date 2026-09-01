@@ -48,7 +48,9 @@ function loadSettings() {
 function saveSettings(settings) {
   ensureDataDir();
   const merged = { ...DEFAULT_SETTINGS, ...settings };
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(merged, null, 2), 'utf8');
+  const tmpFile = SETTINGS_FILE + '.tmp';
+  fs.writeFileSync(tmpFile, JSON.stringify(merged, null, 2), 'utf8');
+  fs.renameSync(tmpFile, SETTINGS_FILE);
   return merged;
 }
 

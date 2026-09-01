@@ -24,7 +24,10 @@ function loadPhonebook() {
 
 function savePhonebook(phonebook) {
   ensureDataDir();
-  fs.writeFileSync(PHONEBOOK_FILE, JSON.stringify(phonebook, null, 2), 'utf8');
+  // Write to a temp file and rename so a crash mid-write can't corrupt the phonebook
+  const tmpFile = PHONEBOOK_FILE + '.tmp';
+  fs.writeFileSync(tmpFile, JSON.stringify(phonebook, null, 2), 'utf8');
+  fs.renameSync(tmpFile, PHONEBOOK_FILE);
   cache.invalidate();
   timestamps.updatePhonebookModified();
 }
